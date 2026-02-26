@@ -31,8 +31,12 @@ app.use((req, res, next) => {
 
 glob
   .sync(__dirname + '/routes/**/*.+(ts|js)')
-  .map(filename => require(filename))
-  .forEach(route => route.default(app));
+//  .map(filename => require(filename))
+  .map(filename => {
+    const full = path.resolve(filename)
+    console.log('Loading route file:', full)
+    return require(full)
+  })  .forEach(route => route.default(app));
 
 setupDev(app, developmentMode);
 
