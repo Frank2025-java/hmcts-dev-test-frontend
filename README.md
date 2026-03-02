@@ -2,11 +2,12 @@
 This is the Front-End to create, update, delete, and list Tasks with the use of a REST API backend.
 
 # Prerequisites
-* IDE: Visual Studio Code
+* IDE: Visual Studio Code on Windows
 * _yarn_ is installed. If not, run `npm install -g yarn`
 * _ts-node_ is installed. If not, run `npm install -g ts-node`
 * _.sh_ and _bash_ can be executed. If not, like on a Windows machine, file _nodemon.json_ is adjusted here, as [below](#Troubleshoot_execute_sh)
 * relative paths can be found. If not, _app.ts_ is adjusted like as [below](#Troubleshoot_find_src)
+* git bash with openssl on Windows also need a fix, to avoid _/C_ translated to _C:\_ 
     
 # Follow Basic steps from Upstream
 1) `yarn install`
@@ -56,4 +57,10 @@ glob
   })
 .forEach(route => route.default(app));
 ```
+
+## Troubleshoot openssl  
+ _/C=GB/ST=A/L=B/O=C/OU=D/CN=E_ gets rewitten to _C:/Users/.../PortableGit/C=GB/ST=A/L=B/O=C/OU=D/CN=E_
+ by Git Bash on Windows. It needs an additional slash. 
+
+ 
 

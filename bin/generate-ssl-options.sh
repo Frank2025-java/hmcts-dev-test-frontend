@@ -21,7 +21,7 @@ then
       -out "$localhost_ssl_folder"/localhost.crt \
       -sha256 \
       -days 3650 \
-      -subj "/C=GB/ST=A/L=B/O=C/OU=D/CN=E" \
+      -subj "//C=GB/ST=A/L=B/O=C/OU=D/CN=E" \
       -extensions v3_new \
       -config <(cat /System/Library/OpenSSL/openssl.cnf \
       <(printf '[v3_new]\nsubjectAltName=DNS:host.docker.internal,DNS:localhost,IP:127.0.0.1\nextendedKeyUsage=serverAuth'))
@@ -34,7 +34,7 @@ then
       -out "$localhost_ssl_folder"/localhost.crt \
       -sha256 \
       -days 3650 \
-      -subj "/C=GB/ST=A/L=B/O=C/OU=D/CN=E" \
+      -subj "//C=GB/ST=A/L=B/O=C/OU=D/CN=E" \
       -addext "subjectAltName = DNS:host.docker.internal,DNS:localhost,IP:127.0.0.1" \
       -addext "extendedKeyUsage = serverAuth"
   fi
