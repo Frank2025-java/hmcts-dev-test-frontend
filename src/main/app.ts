@@ -7,7 +7,8 @@ import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { glob } from 'glob';
-import favicon from 'serve-favicon';
+
+const favicon = require('serve-favicon');
 
 const { setupDev } = require('./development');
 

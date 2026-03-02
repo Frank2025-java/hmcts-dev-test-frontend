@@ -19,6 +19,7 @@ This is the Front-End to create, update, delete, and list Tasks with the use of 
 <br> `yarn config set nodeLinker node-modules`,  
 <br> add `"types": ["node"]` to _tsconf.json_, 
 <br> `yarn add -D @types/node`, 
+<br> `yarn remove @types/serve-favicon`, 
 <br> `npm install -D @types/node`,
 <br> `yarn install`
 2) `npm install dotenv` <br>
