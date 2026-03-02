@@ -14,8 +14,14 @@ This is the Front-End to create, update, delete, and list Tasks with the use of 
 3) Run the Back-End demo-case application on port 4000. That should be provided from cloning the backend.
 4) `yarn start:dev` 
 
-# Package modifications
-1) `npm install dotenv` <br>
+# Package modifications (follown advice from CoPilot)
+1) Advice from CoPilot is that PnP should be avoided and use _node-modules_ in stead:
+<br> `yarn config set nodeLinker node-modules`,  
+<br> add `"types": ["node"]` to _tsconf.json_, 
+<br> `yarn add -D @types/node`, 
+<br> `npm install -D @types/node`,
+<br> `yarn install`
+2) `npm install dotenv` <br>
 A file .env is added, which is picked up with by _dotenv_.
 The .env file will contain user/environment specifics, like the url for the Back-end. 
 2) `npm audit fix --omit=dev` <br>

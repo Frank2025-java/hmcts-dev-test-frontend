@@ -40,3 +40,4 @@ version
 !.yarn/versions
 
 package-lock.json
+yarn.lock
