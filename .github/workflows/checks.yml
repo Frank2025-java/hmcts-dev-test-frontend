@@ -18,6 +18,7 @@ jobs:
           node-version: 18
       - run: corepack enable && yarn --version
       - run: rm -rf .yarn/cache
-      - run: rm yarn.lock
+      - run: rm -f yarn.lock
       - run: yarn install
+      - run: yarn workspaces list
       - run: yarn cichecks
