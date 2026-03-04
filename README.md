@@ -1,5 +1,5 @@
 # HMCTS Dev Test Frontend
-This is the Front-End to create, update, delete, and list Tasks with the use of a REST API backend.
+This is the Front-End to create, update, delete, and list Tasks with the use of a REST API backend. That backend was developed earlier and can run locally as a Spring Boot application, or in the cloud as an AWS API Gateway with the same REST API.
 
 # Prerequisites
 * IDE: Visual Studio Code on Windows
@@ -8,27 +8,34 @@ This is the Front-End to create, update, delete, and list Tasks with the use of 
 * _.sh_ and _bash_ can be executed. If not, like on a Windows machine, file _nodemon.json_ is adjusted here, as [below](#Troubleshoot_execute_sh)
 * relative paths can be found. If not, _app.ts_ is adjusted like as [below](#Troubleshoot_find_src)
 * git bash with openssl on Windows also need a fix, to avoid _/C_ translated to _C:\_ 
-    
+
+# Package modifications (follown advice from CoPilot)
+This code is forked of from  [hmcts-dev-test-frontend](https://github.com/hmcts/hmcts-dev-test-frontend), which has [basic steps below](#Follow_Basic_steps_from_Upstream) that are assumed
+to work, but do not on my Windows environment with a git bash. 
+Some of the details I added as Troubleshoots below. 
+I used Copilot to help me to change the installed packages, to get it working for me. It has been a difficult journeys.
+
+The steps below are the first ones that I took, and are stored in this forked git repository.
+
+* Advice from CoPilot is that PnP should be avoided and use _node-modules_ in stead:
+   1) `yarn config set nodeLinker node-modules`,  
+   1) add `"types": ["node"]` to _tsconf.json_, 
+   1) `yarn add -D @types/node`, 
+   1) `yarn remove @types/serve-favicon`, 
+   1) `npm install -D @types/node`,
+   1) `yarn install`
+* `npm install dotenv` <br>
+A file .env is added, which is picked up with by _dotenv_.
+The .env file will contain user/environment specifics, like the url for the Back-end. 
+* `npm audit fix --omit=dev` <br>
+which resolves vulnerabilities if possible, and excludes _codecept_ issues which are for testing only, so can be ignored.
+
+
 # Follow Basic steps from Upstream
 1) `yarn install`
 2) `yarn webpack`
 3) Run the Back-End demo-case application on port 4000. That should be provided from cloning the backend.
 4) `yarn start:dev` 
-
-# Package modifications (follown advice from CoPilot)
-1) Advice from CoPilot is that PnP should be avoided and use _node-modules_ in stead:
-<br> `yarn config set nodeLinker node-modules`,  
-<br> add `"types": ["node"]` to _tsconf.json_, 
-<br> `yarn add -D @types/node`, 
-<br> `yarn remove @types/serve-favicon`, 
-<br> `npm install -D @types/node`,
-<br> `yarn install`
-2) `npm install dotenv` <br>
-A file .env is added, which is picked up with by _dotenv_.
-The .env file will contain user/environment specifics, like the url for the Back-end. 
-2) `npm audit fix --omit=dev` <br>
-which resolves vulnerabilities if possible, and excludes _codecept_ issues which are for testing only, so can be ignored.
-
 
 
 # Troubleshoot
