@@ -8,7 +8,7 @@ export default function (app: Application): void {
       const response = await axios.get('http://localhost:4000/get-example-case');
       // eslint-disable-next-line no-console
       console.log(response.data);
-      res.render('home', { 'example': response.data });
+      res.render('home', { example: response.data });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error making request:', error);

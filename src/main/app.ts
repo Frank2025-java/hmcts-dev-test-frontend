@@ -35,7 +35,8 @@ glob
   .map(filename => {
     const full = path.resolve(filename);
     return require(full);
-  })  .forEach(route => route.default(app));
+  })
+  .forEach(route => route.default(app));
 
 setupDev(app, developmentMode);
 
