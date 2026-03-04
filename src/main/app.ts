@@ -1,12 +1,12 @@
 import * as path from 'path';
 
-import { HTTPError } from './HttpError';
-import { Nunjucks } from './modules/nunjucks';
-
 import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { glob } from 'glob';
+
+import { HTTPError } from './HttpError';
+import { Nunjucks } from './modules/nunjucks';
 
 const favicon = require('serve-favicon');
 
@@ -32,17 +32,16 @@ app.use((req, res, next) => {
 
 glob
   .sync(__dirname + '/routes/**/*.+(ts|js)')
-//  .map(filename => require(filename))
   .map(filename => {
-    const full = path.resolve(filename)
-    console.log('Loading route file:', full)
-    return require(full)
+    const full = path.resolve(filename);
+    return require(full);
   })  .forEach(route => route.default(app));
 
 setupDev(app, developmentMode);
 
 // error handler
 app.use((err: HTTPError, req: express.Request, res: express.Response) => {
+  // eslint-disable-next-line no-console
   console.log(err);
   // set locals, only providing error in development
   res.locals.message = err.message;
