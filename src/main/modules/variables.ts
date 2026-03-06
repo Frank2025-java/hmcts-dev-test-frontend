@@ -4,8 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  demoUrl: process.env.TEST_URL || 'http://localhost:4000',
+  demoUrl: 'http://localhost:4000',
   backendUrl: process.env.BACKEND_URL || 'http://localhost:4000',
-  basepath: '/task'
+  basepath: '/task',
 };
-

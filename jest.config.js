@@ -6,4 +6,5 @@ module.exports = {
   transform: {
     '^.+\\.ts?$': 'ts-jest',
   },
+  moduleNameMapper: { '^glob$': '<rootDir>/node_modules/glob/dist/commonjs/index.js', },
 };
