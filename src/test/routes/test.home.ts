@@ -1,35 +1,28 @@
-import { expect } from 'chai';
 import request from 'supertest';
-import mockAxios from 'axios';
 import express from 'express';
 
-import { setupApp } from '../../main/app.setup';
+import testSubject from '../../main/routes/home';
+import { routePath } from '../../main/routes/home';
 
-
-jest.mock('axios');
+const expectedTemplate = 'home';
 
 /* eslint-disable jest/expect-expect */
-describe('Home page', () => {
+describe('Route Home Module', () => {
   describe('on GET', () => {
-    test('should return sample home page', async () => {
-
-      // Create an Express app
+    test('should render home page', async () => {
       const testApp = express();
+      const renderMock = jest.fn(function (view, locals) {
+        this.send('OK');
+      });
+      testApp.response.render = renderMock;
 
-      // stub response.render to avoid actual rendering and just send a simple response
-      testApp.response.render = function () {
-        this.send('<html>OK</html>');
-      };
+      // Set up the app with the route
+      testSubject(testApp);
 
-      // Set up the app with the route using the mocked axios
-      setupApp(testApp, mockAxios);
+      const res = await request(testApp).get(routePath);
 
-      // Mock axios.get return value
-      (mockAxios.get as jest.Mock).mockResolvedValue({ data: { ok: true } });
-
-      await request(testApp)
-        .get('/')
-        .expect(res => expect(res.status).to.equal(200));
+      expect(res.status).toBe(200);
+      expect(renderMock).toHaveBeenCalledWith(expectedTemplate, expect.anything());
     });
   });
 });

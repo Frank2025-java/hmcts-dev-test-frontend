@@ -2,7 +2,9 @@ import { config } from '../../main/modules/variables';
 import axios from 'axios';
 
 import testSubject from '../../main/routes/demo';
-const expectedRoute = 'demo';
+import { routePath } from '../../main/routes/demo';
+
+const expectedTemplate = 'demo/home';
 const expectedApiUrl = `${config.demoUrl}/get-example-case`;
 const testData = { caseId: '12345' };
 const testResponse = { data: testData };
@@ -12,56 +14,59 @@ const testError = new Error('Simulate network error');
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-/* eslint-disable jest/expect-expect */
-describe('Demo page', () => {
-  let app: any;
-  let getMock: jest.Mock;
+// Suppress console.log during tests to keep output clean
+jest.spyOn(console, 'log').mockImplementation(() => {});
 
-  beforeAll(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-  });
+/* eslint-disable jest/expect-expect */
+describe('Route Demo Module', () => {
+  let mockApp: any;
+  let testSubjectHandler: any;
+  let actualRoutePath: string;
+  let appGetMock: jest.Mock;
+  let getResponseMock: any;
+
+  const req = {} as any;
 
   beforeEach(() => {
     // Fake Express app with only .get()
-    getMock = jest.fn();
-    app = { get: getMock };
+    appGetMock = jest.fn();
+    mockApp = { get: appGetMock };
+    getResponseMock = mockedAxios.get;
+
+    // Set up the app with the route using the mocked axios
+    testSubject(mockApp, mockedAxios);
+
+    // Extract the handler passed to app.get('/xxx', handler)
+    testSubjectHandler = appGetMock.mock.calls[0][1];
   });
 
-  it('Should Render page with API response on success', async () => {
-    mockedAxios.get.mockResolvedValue(testResponse);
+  it('should use route path', async () => {
+    actualRoutePath = appGetMock.mock.calls[0][0];
 
-    testSubject(app, mockedAxios);
+    expect(actualRoutePath).toBe(routePath);
+  });
 
-    // Extract the handler passed to app.get('/demo', handler)
-    const handler = getMock.mock.calls[0][1];
+  it('Should render page with API response on success', async () => {
+    getResponseMock.mockResolvedValue(testResponse);
 
-    const req = {} as any;
     const res = { render: jest.fn() } as any;
 
-    await handler(req, res);
+    await testSubjectHandler(req, res);
 
-    expect(mockedAxios.get).toHaveBeenCalledWith(expectedApiUrl);
-    expect(res.render).toHaveBeenCalledWith(expectedRoute, expectedData);
+    expect(getResponseMock).toHaveBeenCalledWith(expectedApiUrl);
+    expect(res.render).toHaveBeenCalledWith(expectedTemplate, expectedData);
   });
 
-  it('Should Render page on API failure', async () => {
+  it('Should log and render blank page on API failure', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    mockedAxios.get.mockRejectedValue(testError);
+    getResponseMock.mockRejectedValue(testError);
 
-    testSubject(app, mockedAxios);
-
-    // Extract the handler passed to app.get('/demo', handler)
-    const handler = getMock.mock.calls[0][1];
-
-    const req = {} as any;
     const res = { render: jest.fn() } as any;
+    await testSubjectHandler(req, res);
 
-    await handler(req, res);
-
-    expect(mockedAxios.get).toHaveBeenCalledWith(expectedApiUrl);
-    // error is logged but a blank page is rendered, so we check for empty data
-    expect(res.render).toHaveBeenCalledWith(expectedRoute, {});
+    expect(getResponseMock).toHaveBeenCalledWith(expectedApiUrl);
+    expect(res.render).toHaveBeenCalledWith(expectedTemplate, {});
     expect(consoleSpy).toHaveBeenCalledWith('Error making request:', expect.any(Error));
   });
 });

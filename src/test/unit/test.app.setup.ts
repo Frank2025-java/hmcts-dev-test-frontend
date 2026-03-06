@@ -1,5 +1,5 @@
 import type { Application } from 'express';
-import axios from 'axios';
+import mockAxios from 'axios';
 
 import { setupApp } from '../../main/app.setup';
 
@@ -9,9 +9,10 @@ jest.mock('../../main/development', () => ({
   setupDev: jest.fn(),
 }));
 
+// mockAxios is used in the task route, so we need to mock it here to avoid making real HTTP requests during testing
 jest.mock('axios');
 
-const expectedGetRoutes = ['/','/demo'];
+const expectedGetRoutes = ['/', '/demo', '/task'];
 let actualGetRoutes: string[] = [];
 
 const testSubject = {
@@ -24,7 +25,7 @@ const testSubject = {
 
 describe('App route setup', () => {
   it('should cover all routes', () => {
-    setupApp(testSubject, axios);
+    setupApp(testSubject, mockAxios);
 
     expect(actualGetRoutes.sort()).toEqual(expectedGetRoutes);
 
