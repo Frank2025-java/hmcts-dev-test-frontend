@@ -1,0 +1,77 @@
+{% extends "template.njk" %}
+
+
+{% block content %}
+  <h1 class="govuk-heading-xl">View and Update Task</h1>
+
+  {% set thisPageRoute = "/task/view/" ~ (form.id or task.id) %}
+  {% include "warningAndButtons.njk" %}
+
+  <div class="govuk-!-padding-4" 
+       style="background:#f3f2f1; border-radius:4px;">
+
+    <form action="/task/update" 
+          method="post" 
+          class="govuk-!-margin-bottom-6">
+ 
+      <div class="govuk-form-group form-row">
+        <label class="govuk-label" for="id">Id</label>
+        <div class="govuk-grid-column-two-thirds govuk-grid-column-left">
+              <span class="govuk-body">{{form.id or task.id }}</span>
+              <input type="hidden" 
+                     name="id" 
+                      value="{{form.id or task.id }}">
+        </div>
+      </div>
+
+      <div class="govuk-form-group form-row">
+        <label class="govuk-label" for="title">Title</label>
+        <div class="govuk-grid-column-two-thirds govuk-grid-column-left">
+          <input class="govuk-input"
+                 id="title"
+                 name="title"
+                 type="text"
+                 value="{{form.title or task.title }}">
+        </div>
+      </div>
+  
+      <div class="govuk-form-group  form-row">
+        <label class="govuk-label" for="description">Description</label>
+        <div class="govuk-grid-column-two-thirds govuk-grid-column-left">
+          <textarea class="govuk-textarea"
+                    id="description"
+                    name="description"
+                    rows="4">
+            {{form.description or task.description }}
+          </textarea>
+        </div>
+      </div>
+  
+      <div class="govuk-form-group form-row">
+        <label class="govuk-label" for="due">Due</label>
+        <div class="govuk-grid-column-two-thirds govuk-grid-column-left">
+          <input class="govuk-input"
+                 id="due"
+                 name="due"
+                 type="text"
+                 value="{{form.due or task.due }}">
+        </div>
+      </div>
+  
+      <div class="govuk-form-group form-row">
+        <label class="govuk-label" for="status">Status</label>
+        <div class="govuk-grid-column-two-thirds govuk-grid-column-left">
+            <input type="hidden" 
+               name="status" 
+               value="{{form.status or task.status }}">
+           <span class="govuk-body">{{form.status or task.status }}</span>
+        </div>      
+      </div>
+ 
+      <button class="govuk-button" type="submit">
+        Update Task
+      </button>
+    </form>
+  </div>
+
+{% endblock %}

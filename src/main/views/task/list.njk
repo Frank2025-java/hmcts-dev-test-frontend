@@ -1,0 +1,148 @@
+{% extends "template.njk" %}
+
+{% block content %}
+  <h1 class="govuk-heading-xl">All Tasks</h1>
+
+   <a href="/task/list" class="govuk-button govuk-button--secondary">Refresh</a>
+
+  {% if tasks and tasks.length > 0 %}
+
+    <table class="govuk-table task-table">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th class="govuk-table__header">Title</th>
+          <th class="govuk-table__header">Status</th>
+          <th class="govuk-table__header">Due</th>
+          <th class="govuk-table__header">Description</th>
+          <th class="govuk-table__header">Action</th>
+        </tr>
+      </thead>
+
+      <tbody class="govuk-table__body">
+        {% for task in tasks %}
+          <tr class="govuk-table__row task-row">
+            <td class="govuk-table__cell" title="{{ task.title }}">
+              {% if task.title.length > 12 %}
+                {{ task.title | truncate(8, true, '')  }}…
+              {% else %}
+                {{ task.title }}
+              {% endif %}
+            </td>
+
+            <td class="govuk-table__cell">
+              <form action="/task/updateStatus/{{ task.id }}/status" 
+                    method="post" 
+                    class="status-form"
+                    style="display: inline-flex; align-items: center; gap: 10px;">
+
+                <select name="status"
+                        class="govuk-select status-select"
+                        data-original="{{ task.status }}">
+       
+                  {% for option in statusOptions %}
+                    <option value="{{ option }}"
+                      {% if option == task.status %}selected{% endif %}>
+                      {{ option }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+                <button class="govuk-button govuk-button--secondary update-btn"
+                        style="display:none; margin-left:10px;">
+                  Update
+                </button>
+              </form>
+           </td>
+ 
+            <td class="govuk-table__cell">{{ task.due }}</td>
+            <td class="govuk-table__cell">
+              {% if task.description %}
+                {{ task.description | truncate(16, true, '') }}
+              {% endif %}
+            </td>
+            <td class="govuk-table__cell">
+              <a href="/task/view/{{ task.id }}"
+                 class="govuk-link manage-icon"
+                 title="Manage task">
+                🔧
+              </a>
+              <form action="/task/delete/{{ task.id }}"
+                    method="post" 
+                    style="display:inline;">
+                <button class="govuk-link manage-icon"
+                        title="Delete task" 
+                        style="border:none;background:none;padding:0;">
+                  🗑️
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+
+        <!-- Empty row with create icon -->
+        <tr class="govuk-table__row task-row empty-row">
+          <td class="govuk-table__cell" colspan="4">
+            <span class="govuk-hint">Create a new task</span>
+          </td>
+          <td class="govuk-table__cell">
+            <a href="/task/create"
+               class="govuk-link manage-icon"
+               title="Create new task">
+              ➕
+            </a>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+
+  {% else %}
+    <p class="govuk-body">No tasks found.</p>
+
+    <!-- Still show the empty row with create icon -->
+    <table class="govuk-table task-table">
+      <tbody class="govuk-table__body">
+        <tr class="govuk-table__row task-row empty-row">
+          <td class="govuk-table__cell" colspan="4">
+            <span class="govuk-hint">Create your first task</span>
+          </td>
+          <td class="govuk-table__cell">
+             <form action="/task/create"
+                    method="get" 
+                    style="display:inline;">
+                <button class="govuk-button govuk-button--secondary"
+                        style="display:inline-block; margin-left:10px;"
+                        title="Create new task">
+                ➕ Create
+                </button>
+              </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  {% endif %}
+
+
+
+  <script>
+    document.querySelectorAll(".status-select").forEach(select => {
+      const original = select.dataset.original;
+      const button = select.closest("form").querySelector(".update-btn");
+
+      select.addEventListener("change", () => {
+        if (select.value !== original) {
+          button.style.display = "inline-block";
+        } else {
+          button.style.display = "none";
+        }
+      });
+    });
+  </script>
+
+{% endblock %}
+
+
+
+
+
+

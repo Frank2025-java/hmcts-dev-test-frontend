@@ -1,0 +1,28 @@
+<!-- Helpful Error message -->
+{% if warning %}
+  <div class="govuk-warning-text">
+    <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+    <strong class="govuk-warning-text__text">
+      {{ warning  | safe}}
+    </strong>
+  </div>
+{% endif %}
+
+<!-- Back and Refresh buttons, horizontal on either side. -->
+<div style="display:flex; justify-content:space-between; margin-top:30px;">
+  <!-- Back button -->
+  <form action="/task/list" method="get" class="govuk-!-margin-bottom-4">
+     <button class="govuk-button govuk-button--secondary manage-icon" 
+             type="submit"
+             title="Back to All Tasks">
+     ←
+   </button>
+  </form>
+  <!-- Refresh button -->
+  <form action="{{ thisPageRoute }}" method="get" class="govuk-!-margin-bottom-4">
+    <button class="govuk-button govuk-button--secondary" 
+            type="submit">
+      Refresh
+    </button>
+  </form>
+</div>

@@ -40,6 +40,79 @@ The steps below are the first ones that I took, and are stored in this forked gi
 3. Run the Back-End demo-case application on port 4000. That should be provided from cloning the backend.
 4. `yarn start:dev`
 
+
+# Design
+
+┌────────────────────────┐
+│        APP START       │
+└────────────┬───────────┘
+             │
+             ▼
+┌────────────────────────┐
+│       HOME VIEW        │
+│  (two buttons shown)   │
+└────────────┬───────────┘
+             │
+     ┌───────┴───────────────┐
+     │                       │
+     ▼                       ▼
+┌────────────────┐   ┌────────────────────┐
+│ DEMO SUB-APP   │   │   TASK SUB-APP     │
+│ /demo route    │   │ /task/list route   │
+└───────┬────────┘   └──────────┬────────┘
+        │                         │
+        ▼                         ▼
+┌────────────────────────────┐   ┌────────────────────────────┐
+│ demo view.njk              │   │ task/list view.njk         │
+│ makes HTTP GET → demo API  │   │ makes HTTP GET → backend   │
+└────────────────────────────┘   │ /task/get-all-tasks        │
+                                 └───────────┬────────────────┘
+                                             │
+                                             ▼
+                         ┌──────────────────────────────────────┐
+                         │ task/list view shows:                │
+                         │  - Create Task button                │
+                         │  - For each task: Manage button      │
+                         └───────────┬──────────────────────────┘
+                                     │
+                                     ▼
+                        ┌──────────────────────────────┐
+                        │ /task/view/:id               │
+                        │ Renders view.njk             │
+                        │ Shows:                       │
+                        │  - Delete button             │
+                        │  - Status dropdown + Update  │
+                        └───────────┬──────────────────┘
+                                    │
+               ┌────────────────────┼──────────────────────────┐
+               │                    │                          │
+               ▼                    ▼                          ▼
+   ┌────────────────────┐  ┌──────────────────────┐  ┌────────────────────────┐
+   │ DELETE BUTTON       │  │ UPDATE STATUS BUTTON │  │ CREATE TASK BUTTON     │
+   │ /task/delete/:id    │  │ /task/update/:id     │  │ /task/create           │
+   └──────────┬──────────┘  │ /status              │  └──────────┬────────────┘
+              │             └──────────┬───────────┘             │
+              ▼                        │                         ▼
+   ┌──────────────────────────────┐    │             ┌──────────────────────────────┐
+   │ delete.ts                    │    │             │ create.njk                   │
+   │ HTTP DELETE → backend        │    │             │ form POST → /task/create     │
+   │ /task/delete/{id}            │    │             └──────────┬───────────────────┘
+   └──────────┬───────────────────┘    │                        │
+              │                        ▼                        ▼
+              │             ┌──────────────────────────────┐   ┌──────────────────────────────┐
+              │             │ updateStatus.ts               │   │ create.ts                    │
+              │             │ HTTP PUT → backend            │   │ HTTP POST → backend          │
+              │             │ /task/update/{id}/status/{s}  │   │ /task/create                 │
+              │             └──────────┬───────────────────┘   └──────────┬───────────────────┘
+              │                        │                                   │
+              ▼                        ▼                                   ▼
+   ┌──────────────────────────────┐   ┌──────────────────────────────┐   ┌──────────────────────────────┐
+   │ redirect → /task/list        │   │ redirect → /task/list        │   │ redirect → /task/list        │
+   └──────────────────────────────┘   └──────────────────────────────┘   └──────────────────────────────┘
+
+
+
+
 # Troubleshoot
 
 Working on a Windows machine with a maiden VSC did not allow `yarn start:dev` to run without changes.

@@ -16,6 +16,7 @@ export function setupApp(app: Application, http = axios): void {
       const full = path.resolve(filename);
       return require(full);
     })
+    .filter(route => route && route.default)
     .forEach(route => route.default(app, http));
 
   setupDev(app, developmentMode);
