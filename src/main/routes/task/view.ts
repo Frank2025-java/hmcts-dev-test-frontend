@@ -1,28 +1,36 @@
 import { Application } from 'express';
-import axios from 'axios';
 
-import { config } from '../../modules/variables';
+import { TaskRestApiClient } from 'modules/task/backend';
+import { warning } from './error';
+import { TaskDto } from 'types/task.dto';
+import { toDto } from 'modules/task/mapper';
 
 export const routePath = '/task/view/:id';
 
-export default function (app: Application, http: typeof axios): void {
+export default function (app: Application, api: TaskRestApiClient): void {
   app.get(routePath, async (req, res) => {
-    console.log('Render view task form.');
-
-    let response = { data: '', status: 0, statusText: '', headers: {}, config: {} };
+    let response = { data: '', status: 0 };
 
     try {
       const { id } = req.params;
-      const url = `${config.backendUrl}${config.basepath}/get/${id}`;
 
-      console.log('Calling:', url);
-      response = await http.get(url);
+      response = await api.View.call(id);
 
-      return res.render('task/view.njk', { task: response.data });
+      if (response.status === 200) {
+        const dto: TaskDto = toDto(response.data);
+
+        return res.render('task/view.njk', { task: dto });
+      } else {
+        // stay on page and show error message
+        return res.render('task/view.njk', {
+          warning: warning(200, response.status, response.data),
+          form: req.body,
+        });
+      }
     } catch (error: any) {
       // stay on page and show error message
       return res.render('task/view.njk', {
-        warning: error?.message,
+        warning: error,
         form: req.body,
       });
     }

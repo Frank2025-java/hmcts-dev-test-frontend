@@ -36,7 +36,7 @@ setupApp(app, axios);
 // error handler
 app.use((err: HTTPError, req: express.Request, res: express.Response, next: express.NextFunction) => {
   // eslint-disable-next-line no-console
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' + err);
+  console.log('>>>>>>>' + err);
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = env === 'development' ? err : {};

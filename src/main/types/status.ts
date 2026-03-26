@@ -1,4 +1,4 @@
 export enum Status {
-  Init = "Initial",
-  Deleted = "Deleted"
+  Init    = 'Initial',
+  Deleted = 'Deleted',
 }

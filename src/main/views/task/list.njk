@@ -1,9 +1,12 @@
 {% extends "template.njk" %}
 
 {% block content %}
-  <h1 class="govuk-heading-xl">All Tasks</h1>
 
-   <a href="/task/list" class="govuk-button govuk-button--secondary">Refresh</a>
+  {% set thisPageRoute = "/task/list/" %}
+  {% set backPageRoute = "/task" %}
+  {% include "warningAndButtons.njk" %}
+
+  <h1 class="govuk-heading-xl">All Tasks</h1>
 
   {% if tasks and tasks.length > 0 %}
 
@@ -54,7 +57,8 @@
               </form>
            </td>
  
-            <td class="govuk-table__cell">{{ task.due }}</td>
+            <td class="govuk-table__cell" data-local-datetime="{{ task.due }}">{{ task.due }}</td>
+
             <td class="govuk-table__cell">
               {% if task.description %}
                 {{ task.description | truncate(16, true, '') }}
@@ -138,6 +142,8 @@
       });
     });
   </script>
+
+  {% include "localdatetime.njk" %}
 
 {% endblock %}
 

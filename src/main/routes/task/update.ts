@@ -1,50 +1,37 @@
 import { Application } from 'express';
-import axios from 'axios';
 
-import { config } from '../../modules/variables';
-import { handleRouteError } from './error';
-import type { TaskDto } from '../../types/task.dto';
+import type { TaskDto } from 'types/task.dto';
+import { toDto } from 'modules/task/mapper';
+import { TaskRestApiClient } from 'modules/task/backend';
+import { warning } from './error';
 
 export const routePath = '/task/update';
 
-export default function (app: Application, http: typeof axios): void {
+export default function (app: Application, api: TaskRestApiClient): void {
   app.post(routePath, async (req, res) => {
-    let response = { data: '', status: 0, statusText: '', headers: {}, config: {} };
-    let status = 0;
-
-    const dto: TaskDto = {
-      id: req.body.id,
-      title: req.body.title,
-      description: req.body.description,
-      due: req.body.due,
-      status: req.body.status,
-    };
+    let response = { data: '', status: 0 };
 
     try {
-      const url = `${config.backendUrl}${config.basepath}/update`;
+      const task: TaskDto = await toDto(req.body);
 
-      console.log('Calling:' + url);
-      response = await http.post(url, dto);
-      console.log(response.data);
-      status = response.status;
-    } catch (error: any) {
-      status = Number(error.response?.status);
-      response = error.response;
-    }
+      response = await api.Update.call(task);
 
-    try {
-      if (status === 200) {
+      if (response.status === 200) {
         // go to the task list page after updating a task
         return res.redirect('/task/list');
       } else {
         // Unexpected status → stay on page, keep form data
         return res.render('task/view.njk', {
-          warning: `Expected 200. Unexpected status code ${status}. <br><small>Response: ${response.data}</small>`,
+          warning: warning(200, response.status, response.data),
           form: req.body,
         });
       }
     } catch (error: any) {
-      handleRouteError(res, response, error);
+      // Stay on page, keep form data
+      return res.render('task/view.njk', {
+        warning: error,
+        form: req.body,
+      });
     }
   });
 }

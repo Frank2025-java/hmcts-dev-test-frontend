@@ -1,40 +1,38 @@
 import { Application } from 'express';
-import axios from 'axios';
-import { handleRouteError } from './error';
 
-import { config } from '../../modules/variables';
-import { TaskDto } from '../../types/task.dto';
-import { Status } from '../../types/status';
+import { TaskDto } from 'types/task.dto';
+import { Status } from 'types/status';
+
+import { TaskRestApiClient } from 'modules/task/backend';
+import { warning } from './error';
+import { toDtoArray } from 'modules/task/mapper';
 
 export const routePath = '/task/list';
 
-export default function (app: Application, http: typeof axios): void {
+export default function (app: Application, api: TaskRestApiClient): void {
   app.get(routePath, async (req, res) => {
-    let response = { data: '', status: 0, statusText: '', headers: {}, config: {} };
     let tasks: TaskDto[] = [];
 
     try {
-      const url = `${config.backendUrl}${config.basepath}/get-all-tasks`;
-      console.log('Calling:' + url);
-      response = await http.get(url);
-      console.log(response.data);
+      const response = await api.List.call();
 
-      tasks = Array.isArray(response.data) ? response.data : [];
-    } catch (error: any) {
-      const status = Number(error.response?.status);
-      const message = error.response?.data;
-
-      if (status === 400 && typeof message === 'string' && message.includes('none')) {
-        console.log('Backend reports no tasks — rendering empty list: ' + message);
+      if (response.status === 200) {
+        tasks = toDtoArray(response.data);
       } else {
-        handleRouteError(res, response, error);
-        return; // Stop further execution after handling the error
+        if (response.status === 400 && typeof response.data === 'string' && response.data.includes('none')) {
+          console.log('Backend reports no tasks — rendering empty list: ' + response.data);
+          tasks = [];
+        } else {
+          return res.render('task/list.njk', { warning: warning(200, response.status, response.data) });
+        }
       }
-    }
 
-    if (tasks.length > 0) {
-      tasks.sort((a: any, b: any) => Number(a.id) - Number(b.id));
+      if (tasks.length > 0) {
+        tasks.sort((a: any, b: any) => Number(a.id) - Number(b.id));
+      }
+      return res.render('task/list', { tasks: tasks, statusOptions: Object.values(Status) });
+    } catch (error) {
+      return res.render('task/list.njk', { warning: error });
     }
-    return res.render('task/list', { tasks: tasks, statusOptions: Object.values(Status) });
   });
 }
