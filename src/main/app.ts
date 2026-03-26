@@ -3,14 +3,14 @@ import * as path from 'path';
 import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import { glob } from 'glob';
+import axios from 'axios';
 
 import { HTTPError } from './HttpError';
 import { Nunjucks } from './modules/nunjucks';
 
-const favicon = require('serve-favicon');
+import { setupApp } from './app.setup';
 
-const { setupDev } = require('./development');
+const favicon = require('serve-favicon');
 
 const env = process.env.NODE_ENV || 'development';
 const developmentMode = env === 'development';
@@ -30,20 +30,13 @@ app.use((req, res, next) => {
   next();
 });
 
-glob
-  .sync(__dirname + '/routes/**/*.+(ts|js)')
-  .map(filename => {
-    const full = path.resolve(filename);
-    return require(full);
-  })
-  .forEach(route => route.default(app));
-
-setupDev(app, developmentMode);
+// isolated to make the route converage testable
+setupApp(app, axios);
 
 // error handler
-app.use((err: HTTPError, req: express.Request, res: express.Response) => {
+app.use((err: HTTPError, req: express.Request, res: express.Response, next: express.NextFunction) => {
   // eslint-disable-next-line no-console
-  console.log(err);
+  console.log('>>>>>>>' + err);
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = env === 'development' ? err : {};
