@@ -155,12 +155,10 @@ Lint should be configured to be platform independent, so need to adjust the carr
 
 Add because we have added alias paths in our code, Lint needs to support that as well.
 
-``
-yarn add -D eslint-import-resolver-alias
-``
+`yarn add -D eslint-import-resolver-alias`
 
 Running locally Lint cannot handle the large amount of files, and in _package.json_ we
-have to add extra double quotes around _**/*.scss_ .
+have to add extra double quotes around _\**/*.scss_ .
 
 ```
 "lint": "stylelint \"**/*.scss\" -v -q && eslint . --ext .js,.ts && prettier --check .",

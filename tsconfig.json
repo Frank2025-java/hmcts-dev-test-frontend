@@ -23,15 +23,8 @@
       "router/*": ["router/*"],
       "routes/*": ["routes/*"],
       "modules/*": ["modules/*"],
-      "types/*": ["types/*"],
+      "types/*": ["types/*"]
     }
   },
-  "exclude": [
-    "**/*.test.ts", 
-    "**/codecept.conf.ts", 
-    "**/__mocks__/*",
-    "node_modules",
-    "dist",
-    "build",
-  ]
+  "exclude": ["**/*.test.ts", "**/codecept.conf.ts", "**/__mocks__/*", "node_modules", "dist", "build"]
 }

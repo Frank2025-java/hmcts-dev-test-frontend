@@ -5,21 +5,21 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'import', 'jest'],
   settings: {
-  'import/resolver': {
-    alias: {
-      map: [
-        ['types', './src/main/types'],
-        ['router','./src/main/router'],
-        ['routes','./src/main/routes'],
-        ['modules','./src/main/modules']
-   ],
-      extensions: ['.ts', '.js']
-      }
+    'import/resolver': {
+      alias: {
+        map: [
+          ['types', './src/main/types'],
+          ['router', './src/main/router'],
+          ['routes', './src/main/routes'],
+          ['modules', './src/main/modules'],
+        ],
+        extensions: ['.ts', '.js'],
+      },
     },
     node: {
       extensions: ['.ts', '.js'],
-      paths: ['src/main']
-    }
+      paths: ['src/main'],
+    },
   },
   extends: [
     'eslint:recommended',
@@ -56,14 +56,7 @@ module.exports = {
     'import/order': [
       'error',
       {
-        groups: [
-          'builtin', 
-          'external',       
-          'internal',             
-          'parent', 
-          'sibling', 
-          'index'
-        ],
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
 
         alphabetize: {
           caseInsensitive: false,
@@ -72,17 +65,17 @@ module.exports = {
         'newlines-between': 'always',
 
         pathGroups: [
-         {
-           pattern: 'types/**',
-           group: 'internal',
-           position: 'before',
-         },
-         {
-           pattern: '{router,routes,modules}/**',
-           group: 'internal',
-           position: 'after',
-         },
-        ]
+          {
+            pattern: 'types/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '{router,routes,modules}/**',
+            group: 'internal',
+            position: 'after',
+          },
+        ],
       },
     ],
     'jest/prefer-to-have-length': 'error',
