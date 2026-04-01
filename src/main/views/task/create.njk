@@ -1,0 +1,35 @@
+{% extends "template.njk" %}
+
+
+
+{% block content %}
+  <h1 class="govuk-heading-xl">Create a New Task</h1>
+
+  {% set thisPageRoute = "/task/create" %}
+  {% include "warningAndButtons.njk" %}
+
+  <form action="/task/create" method="post" class="govuk-form-group">
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="title">Title</label>
+      <input class="govuk-input" id="title" name="title" type="text" required  value="{{ form.title }}">
+    </div>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="description">Description (optional)</label>
+      <textarea class="govuk-textarea" id="description" name="description">{{ form.description }}</textarea>
+    </div>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="due">Due Date & Time</label>
+      <input class="govuk-input" id="due" name="due" type="datetime-local" value="{{ form.due }}">
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+          <button class="govuk-button" type="submit">Create Task</button>
+      </div>
+    </div>
+
+  </form>
+{% endblock %}

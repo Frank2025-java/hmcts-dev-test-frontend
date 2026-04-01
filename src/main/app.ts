@@ -1,16 +1,15 @@
 import * as path from 'path';
 
+import axios from 'axios';
 import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import { glob } from 'glob';
 
 import { HTTPError } from './HttpError';
+import { setupApp } from './app.setup';
 import { Nunjucks } from './modules/nunjucks';
 
 const favicon = require('serve-favicon');
-
-const { setupDev } = require('./development');
 
 const env = process.env.NODE_ENV || 'development';
 const developmentMode = env === 'development';
@@ -30,18 +29,12 @@ app.use((req, res, next) => {
   next();
 });
 
-glob
-  .sync(__dirname + '/routes/**/*.+(ts|js)')
-  .map(filename => {
-    const full = path.resolve(filename);
-    return require(full);
-  })
-  .forEach(route => route.default(app));
+// isolated to make the route converage testable
+setupApp(app, axios);
 
-setupDev(app, developmentMode);
-
-// error handler
-app.use((err: HTTPError, req: express.Request, res: express.Response) => {
+// error handler, with next argument so that Express recognises it
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: HTTPError, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // eslint-disable-next-line no-console
   console.log(err);
   // set locals, only providing error in development

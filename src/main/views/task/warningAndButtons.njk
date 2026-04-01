@@ -1,0 +1,47 @@
+<!-- Helpful Error message -->
+{% if warning %}
+  <div class="govuk-warning-text">
+    <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+    <strong class="govuk-warning-text__text">
+      {{ warning  | safe}}
+    </strong>
+  </div>
+{% endif %}
+
+{% set backUrl = backPageRoute | default('/task/list') %}
+{% set thisPagekUrl = thisPageRoute | default('/task') %}
+
+{% if backPageRoute %}
+  {% set backTitle = 'Back' %}
+{% else %}
+  {% set backTitle = 'Back to All Tasks' %}
+{% endif %}
+
+{% if thisPageRoute %}
+  {% set thisPageTitle = 'Refresh' %}
+{% else %}
+  {% set thisPageTitle = 'Home' %}
+{% endif %}
+
+
+<!-- Back and Refresh buttons, horizontal on either side. -->
+<div style="display:flex; justify-content:space-between; margin-top:30px;">
+  
+  <!-- Back button -->
+  <form action="{{ backUrl }}" method="get" class="govuk-!-margin-bottom-4">
+     <button class="govuk-button govuk-button--secondary manage-icon" 
+             type="submit"
+             title="{{ BackTitle }}">
+     ←
+   </button>
+  </form>
+
+  <!-- Refresh button -->
+  <form action="{{ thisPageRoute }}" method="get" class="govuk-!-margin-bottom-4">
+    <button class="govuk-button govuk-button--secondary" 
+            type="submit"
+            title="{{ thisPageTitle }} ">
+      Refresh
+    </button>
+  </form>
+</div>

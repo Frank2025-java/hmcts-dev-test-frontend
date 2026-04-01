@@ -1,0 +1,22 @@
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const elements = document.querySelectorAll("[data-local-datetime]");
+
+    elements.forEach(el => {
+      const iso = el.dataset.localDatetime;
+      if (!iso) return;
+
+      const d = new Date(iso);
+
+      const formatted = d.toLocaleString("en-GB", {
+         year: "numeric",
+        month: "short",   
+          day: "2-digit",
+         hour: "2-digit",
+       minute: "2-digit"
+      });
+
+      el.textContent = formatted;
+    });
+  });
+</script>

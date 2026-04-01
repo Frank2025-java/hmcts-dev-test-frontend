@@ -1,0 +1,15 @@
+{% extends "template.njk" %}
+
+{% block content %}
+  <h1 class="govuk-heading-xl">Welcome to Frank's HM Court & Tribunal Service Developer's Application Test!</h1>
+
+  {% if bodyHtml %}
+    <div class="backend-body">
+      {{ bodyHtml | safe }}
+    </div>
+  {% else %}
+    <p>No content returned from backend.</p>
+  {% endif %}
+
+
+{% endblock %}

@@ -6,116 +6,79 @@
 but ultimately it is up to you -->
 
 {% block content %}
-  <h1 class="govuk-heading-xl">Welcome to your dev test!</h1>
+ <h1 class="govuk-heading-xl">Welcome to Frank's HM Court & Tribunal Service Developer's Application Test!</h1>
 
-  <!-- The freedom is yours. You can design the solution however you like, however there is a starting point provided
-  to ensure you have both services running. You may want to make use of the Gov UK Components:
-  https://design-system.service.gov.uk/components/ to add tabs and so forth :) -->
 
-  {% if example.id %}
 
-    {{ govukSummaryList({
-      rows: [
-        {
-          key: {
-            text: "ID"
-          },
-          value: {
-            text: example.id
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "change case id ?!"
-              }
-            ]
-          }
-        },
-        {
-          key: {
-            text: "Case Number"
-          },
-          value: {
-            text: example.caseNumber
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "change case number"
-              }
-            ]
-          }
-        },
-        {
-          key: {
-            text: "Title"
-          },
-          value: {
-            html: example.title
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "change case title"
-              }
-            ]
-          }
-        },
-        {
-          key: {
-            text: "Description"
-          },
-          value: {
-            html: example.description
-          },
-          actions: {
-            items: [
-               {
-                 href: "#",
-                 text: "Delete",
-                 visuallyHiddenText: "Delete description"
-               },
-               {
-                 href: "#",
-                 text: "Change",
-                 visuallyHiddenText: "Change description"
-               }
-            ]
-          }
-        },
-        {
-          key: {
-            text: "Status"
-          },
-          value: {
-            html: example.status
-          },
-          actions: {
-            items: [
-            ]
-          }
-        },
-        {
-          key: {
-           text: "Created Date"
-          },
-          value: {
-           html: example.createdDate
-          },
-          actions: {
-           items: [
-           ]
-          }
-        }
-      ]
-    }) }}
+<div class="connection-status">
+  <span id="taskSpinner" class="button-spinner" style="display:none;"></span>
+  <span id="taskSpinnerLabel" class="govuk-body">Checking service {{urlBackEnd}} …</span>
+</div>
 
-  {% endif %}
+<a id="taskButton"
+   href="/task/list" 
+   role="button" 
+   draggable="false" 
+   class="govuk-button govuk-button--secondary">
+Show Task App
+</a>
+
+
+<div class="connection-status">
+  <span id="demoSpinner" class="button-spinner" style="display:none;"></span>
+  <span id="demoSpinnerLabel" class="govuk-body">...</span>
+</div>
+
+<a id="demoButton"
+   href="/demo"
+   role="button"
+   draggable="false"
+   class="govuk-button govuk-button--secondary">
+Show Gov Demo
+</a>
+
+<script>
+  async function updateButtonState(idPrefix, urlToCheck, timeoutMs) {
+    const button = document.getElementById(idPrefix + "Button");
+    const spinner = document.getElementById(idPrefix + "Spinner");
+    const label = document.getElementById(idPrefix + "SpinnerLabel");
+    const urlMessage = `Service <a href="${urlToCheck}" target="_blank">${urlToCheck}</a>`
+
+    button.classList.add("govuk-button--secondary");
+    button.classList.remove("button-ready");
+    spinner.style.display = "inline-block";
+    label.innerHTML = `Checking ${urlMessage} …`;
+
+    // Create a timeout promise
+    const timeout = new Promise((resolve) =>
+      setTimeout(() => resolve({ ok: false, timeout: true }), timeoutMs)
+    );
+
+    // Ping health endpoint
+    const response = await Promise.race([
+      fetch(urlToCheck, {method: "HEAD" }).catch(() => ({ ok: false })),
+      timeout
+    ]);
+
+    if (response.ok) {
+        button.classList.add("button-ready");
+        button.classList.remove("govuk-button--secondary");
+        label.innerHTML = `${urlMessage} ok`;
+    } else {
+        label.innerHTML = `${urlMessage} not available`;
+    }
+
+    spinner.style.display = "none"
+  }
+
+  window.addEventListener('load', () => {
+    // Run check on page load
+    updateButtonState("task",'{{urlBackEnd}}',20000);
+    updateButtonState("demo",'{{urlDemo}}',2000);
+  });
+</script>
+
+
+
 
 {% endblock %}

@@ -1,1 +1,47 @@
 @import 'govuk-frontend';
+.task-row:hover {
+  background-color: #f3f2f1; /* GOV.UK light grey */
+}
+
+.manage-icon {
+  text-decoration: none !important;
+  font-weight: bold;
+  font-size: 24px;
+  text-shadow:
+    1px 0 currentColor,
+    -1px 0 currentColor,
+    0 1px currentColor,
+    0 -1px currentColor;
+  line-height: 1;
+  display: inline-block;
+  padding: 4px;
+}
+
+.empty-row {
+  background-color: #beb9b9;
+}
+
+.form-row {
+  display: flex;
+  align-items: left;
+  justify-content: space-between;
+}
+
+.form-row .govuk-label {
+  margin-right: 20px;
+  width: 80px;
+}
+
+.form-row .govuk-input,
+.form-row .govuk-textarea {
+  flex: 1;
+}
+
+/* Left aligned */
+.govuk-grid-column-left {
+  text-align: left;
+}
+
+.govuk-label {
+  font-weight: bold;
+}

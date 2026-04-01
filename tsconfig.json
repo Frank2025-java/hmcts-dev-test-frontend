@@ -1,4 +1,7 @@
 {
+  "ts-node": {
+    "files": true
+  },
   "compilerOptions": {
     "outDir": "./src/",
     "module": "commonjs",
@@ -18,8 +21,10 @@
     "baseUrl": "src/main",
     "paths": {
       "router/*": ["router/*"],
-      "routes/*": ["routes/*"]
+      "routes/*": ["routes/*"],
+      "modules/*": ["modules/*"],
+      "types/*": ["types/*"]
     }
   },
-  "exclude": ["**/*.test.ts", "**/codecept.conf.ts", "**/__mocks__/*"]
+  "exclude": ["**/*.test.ts", "**/codecept.conf.ts", "**/__mocks__/*", "node_modules", "dist", "build"]
 }
