@@ -1,6 +1,6 @@
-import axios from 'axios';
-
 import { resolve } from 'path';
+
+import axios from 'axios';
 import { Application } from 'express';
 import { globSync } from 'glob';
 

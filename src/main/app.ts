@@ -1,14 +1,13 @@
 import * as path from 'path';
 
+import axios from 'axios';
 import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import axios from 'axios';
 
 import { HTTPError } from './HttpError';
-import { Nunjucks } from './modules/nunjucks';
-
 import { setupApp } from './app.setup';
+import { Nunjucks } from './modules/nunjucks';
 
 const favicon = require('serve-favicon');
 
@@ -33,10 +32,11 @@ app.use((req, res, next) => {
 // isolated to make the route converage testable
 setupApp(app, axios);
 
-// error handler
-app.use((err: HTTPError, req: express.Request, res: express.Response, next: express.NextFunction) => {
+// error handler, with next argument so that Express recognises it
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: HTTPError, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // eslint-disable-next-line no-console
-  console.log('>>>>>>>' + err);
+  console.log(err);
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = env === 'development' ? err : {};

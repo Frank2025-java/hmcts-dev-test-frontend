@@ -1,5 +1,5 @@
-import type { Application } from 'express';
 import mockAxios from 'axios';
+import type { Application } from 'express';
 
 // mockAxios to avoid making real HTTP requests during testing
 jest.mock('axios');
@@ -10,6 +10,7 @@ jest.mock('../../main/routes', () => ({
 jest.mock('../../main/routes/task', () => ({
   registerTaskRoutes: jest.fn(),
 }));
+import { setupApp } from '../../main/app.setup';
 import { registerRootRoutes } from '../../main/routes';
 import { registerTaskRoutes } from '../../main/routes/task';
 const mockRegisterTaskRoutes = registerTaskRoutes as jest.Mock;
@@ -19,8 +20,6 @@ const mockRegisterRootRoutes = registerRootRoutes as jest.Mock;
 jest.mock('../../main/development', () => ({
   setupDev: jest.fn(),
 }));
-
-import { setupApp } from '../../main/app.setup';
 
 describe('App route setup', () => {
   const mockApp = {} as unknown as Application;

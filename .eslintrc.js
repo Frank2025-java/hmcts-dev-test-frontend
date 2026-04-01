@@ -4,6 +4,23 @@ module.exports = {
   env: { browser: true, es6: true, node: true },
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'import', 'jest'],
+  settings: {
+  'import/resolver': {
+    alias: {
+      map: [
+        ['types', './src/main/types'],
+        ['router','./src/main/router'],
+        ['routes','./src/main/routes'],
+        ['modules','./src/main/modules']
+   ],
+      extensions: ['.ts', '.js']
+      }
+    },
+    node: {
+      extensions: ['.ts', '.js'],
+      paths: ['src/main']
+    }
+  },
   extends: [
     'eslint:recommended',
     'plugin:import/errors',
@@ -39,16 +56,38 @@ module.exports = {
     'import/order': [
       'error',
       {
+        groups: [
+          'builtin', 
+          'external',       
+          'internal',             
+          'parent', 
+          'sibling', 
+          'index'
+        ],
+
         alphabetize: {
           caseInsensitive: false,
           order: 'asc',
         },
         'newlines-between': 'always',
+
+        pathGroups: [
+         {
+           pattern: 'types/**',
+           group: 'internal',
+           position: 'before',
+         },
+         {
+           pattern: '{router,routes,modules}/**',
+           group: 'internal',
+           position: 'after',
+         },
+        ]
       },
     ],
     'jest/prefer-to-have-length': 'error',
     'jest/valid-expect': 'off',
-    'linebreak-style': ['error', 'unix'],
+    'linebreak-style': 'off',
     'no-console': 'warn',
     'no-prototype-builtins': 'off',
     'no-return-await': 'error',

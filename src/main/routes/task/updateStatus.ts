@@ -1,19 +1,18 @@
 import { Application } from 'express';
 
 import { TaskRestApiClient } from 'modules/task/backend';
+
 import { warning } from './error';
 
 export const routePath = '/task/updateStatus/:id/status';
 
 export default function (app: Application, api: TaskRestApiClient): void {
   app.post(routePath, async (req, res) => {
-    let response = { data: '', status: 0 };
-
     try {
       const { id } = req.params;
       const { status } = req.body;
 
-      response = await api.UpdateStatus.call(id, status);
+      const response = await api.UpdateStatus.call(id, status);
 
       if (response.status === 200) {
         // refresh task list page after updating a task
@@ -25,7 +24,7 @@ export default function (app: Application, api: TaskRestApiClient): void {
           form: req.body,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Unexpected status → stay on page
       return res.render('task/list.njk', {
         warning: error,

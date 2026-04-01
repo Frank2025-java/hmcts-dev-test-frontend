@@ -1,8 +1,9 @@
-import { Application } from 'express';
 import { load } from 'cheerio';
+import { Application } from 'express';
 
 import { TaskRestApiClient } from 'modules/task/backend';
-import { handleRouteError } from './error';
+
+import { renderRouteError } from './error';
 
 export const routePath = '/task';
 
@@ -14,14 +15,22 @@ export default function (app: Application, api: TaskRestApiClient): void {
     try {
       response = await api.Root.call();
 
-      // expecting html back. parse it and send body to view
-      const dom = load(response.data);
-      const bodyHtml = dom('body').html();
+      try {
+        // expecting html back. parse it and send body to view
+        const dom = load(response.data);
+        const bodyHtml = dom('body').html();
 
-      // send body to view bodyHtml.njk
-      res.render('task/bodyHtml', { bodyHtml });
-    } catch (error) {
-      handleRouteError(res, response.data, error?.message);
+        // send body to view bodyHtml.njk
+        res.render('task/bodyHtml', { bodyHtml });
+      } catch (parseError: unknown) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to parse response body as HTML:' + response.data);
+        // eslint-disable-next-line no-console
+        console.error('Error parsing response:', parseError);
+        renderRouteError(res, parseError);
+      }
+    } catch (error: unknown) {
+      renderRouteError(res, error);
     }
   });
 }

@@ -1,23 +1,23 @@
 import { Application } from 'express';
 
-import { TaskRestApiClient } from 'modules/task/backend';
-import { warning } from './error';
 import { TaskDto } from 'types/task.dto';
-import { toDto } from 'modules/task/mapper';
+
+import { TaskRestApiClient } from 'modules/task/backend';
+import { fromBackendDto } from 'modules/task/mapper';
+
+import { warning } from './error';
 
 export const routePath = '/task/view/:id';
 
 export default function (app: Application, api: TaskRestApiClient): void {
   app.get(routePath, async (req, res) => {
-    let response = { data: '', status: 0 };
-
     try {
       const { id } = req.params;
 
-      response = await api.View.call(id);
+      const response = await api.View.call(id);
 
       if (response.status === 200) {
-        const dto: TaskDto = toDto(response.data);
+        const dto: TaskDto = fromBackendDto(response.data);
 
         return res.render('task/view.njk', { task: dto });
       } else {
@@ -27,7 +27,7 @@ export default function (app: Application, api: TaskRestApiClient): void {
           form: req.body,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // stay on page and show error message
       return res.render('task/view.njk', {
         warning: error,

@@ -1,8 +1,16 @@
-import { toDto, toDtoArray, isoDateTimeRegex, localDateTimeOptionalSecondsRegex } from '../../main/modules/task/mapper';
+import {
+  TaskFormInput,
+  fromBackendDto,
+  fromBackendDtoArray,
+  isoDateTimeRegex,
+  localDateTimeOptionalSecondsRegex,
+  toDto,
+  utcDateTimeRegex,
+} from '../../main/modules/task/mapper';
 import type { TaskDto } from '../../main/types/task.dto';
 
 describe('toDto mapper', () => {
-  const validBody = {
+  const validBody: TaskFormInput = {
     id: 123,
     title: 'Test task',
     description: 'Something',
@@ -29,7 +37,7 @@ describe('toDto mapper', () => {
 
   it('throws an error when required fields are missing', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       // missing title
       due: '2025-01-01T10:00:00Z',
     };
@@ -40,7 +48,7 @@ describe('toDto mapper', () => {
 
   it('allows optional id to be undefined', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       ...validBody,
       id: undefined,
     };
@@ -54,7 +62,7 @@ describe('toDto mapper', () => {
 
   it('allows optional description to be null when missing', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       ...validBody,
       description: undefined,
     };
@@ -68,7 +76,7 @@ describe('toDto mapper', () => {
 
   it('allows optional status to be null when missing', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       ...validBody,
       status: undefined,
     };
@@ -82,7 +90,7 @@ describe('toDto mapper', () => {
 
   it('throws an error when due is missing', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       title: 'Test',
       description: 'Something',
       status: 'Initial',
@@ -94,7 +102,7 @@ describe('toDto mapper', () => {
 
   it('throws an error when due is some text string', () => {
     // given
-    const body = {
+    const body: TaskFormInput = {
       ...validBody,
       due: 'not-a-date',
     };
@@ -102,48 +110,102 @@ describe('toDto mapper', () => {
     // when, then throws
     expect(() => toDto(body)).toThrow();
   });
+});
 
-  it('should leave it to REST API to error when due is not a valid iso date-time but satisfies regex', () => {
-    // given
-    const body = {
-      title: 'Test task',
-      due: '2026-02-29T25:00:00Z',
-    };
+describe('fromBackendDto mapper', () => {
+  const validResponse: TaskDto = {
+    id: '123',
+    title: 'Test task',
+    description: 'Something',
+    due: '2025-01-01T10:00:00Z',
+    status: 'Initial',
+  };
 
+  it('maps a full valid dto response to TaskDto', () => {
     // when
-    const dto = toDto(body);
+    const dto = fromBackendDto(validResponse);
 
-    //then
+    // then
     expect(dto).toEqual<TaskDto>({
-      id: undefined,
+      id: '123',
       title: 'Test task',
-      description: null,
-      status: undefined,
-      due: '2026-02-29T25:00:00Z',
+      description: 'Something',
+      due: '2025-01-01T10:00:00Z',
+      status: 'Initial',
     });
-
-    expect(dto.due).toBeDefined();
-    expect(isoDateTimeRegex.test(dto.due as string)).toBe(true);
   });
 
+  it('Should have  id on response', () => {
+    // given
+    const backendResponse: TaskDto = {
+      ...validResponse,
+      id: undefined,
+    };
+
+    // when, then
+    expect(() => fromBackendDto(backendResponse)).toThrow();
+  });
+
+  it('Should have status on response', () => {
+    // given
+    const backendResponse: TaskDto = {
+      ...validResponse,
+      status: undefined,
+    };
+
+    // when, then
+    expect(() => fromBackendDto(backendResponse)).toThrow();
+  });
+
+  it('Should have due on response', () => {
+    // given
+    const backendResponse: TaskDto = {
+      ...validResponse,
+      due: undefined,
+    };
+
+    // when, then
+    expect(() => fromBackendDto(backendResponse)).toThrow();
+  });
+
+  it('Should have valid due date', () => {
+    // given
+    const response = {
+      ...validResponse,
+      due: 'not-a-date',
+    };
+
+    // when, then throws
+    expect(() => fromBackendDto(response)).toThrow();
+  });
+});
+
+describe('Verify backend get all DTO mapping', () => {
   it('should map an array of tasks', () => {
     // given
     const response = [
-      { title: 'Test task 2', due: '2025-02-29T25:00:00Z', newfield: 'newfield2' },
+      {
+        id: 2,
+        title: 'Test task 2',
+        description: null,
+        due: '2025-02-29T23:00:00-02:00',
+        newfield: 'newfield2',
+        status: 'Deleted',
+      },
       { id: 1, title: 'Test task 1', description: '', due: '2026-02-01T10:00:00Z', status: 'Initial' },
     ];
 
     // when
-    const dtos = toDtoArray(response);
+    const dtos = fromBackendDtoArray(response);
 
     // then
     expect(dtos).toEqual<TaskDto[]>([
       {
-        id: undefined,
+        id: '2',
         title: 'Test task 2',
         description: null,
-        status: undefined,
-        due: '2025-02-29T25:00:00Z',
+        status: 'Deleted',
+        due: '2025-02-29T23:00:00-02:00',
       },
       {
         id: '1',
@@ -162,7 +224,7 @@ describe('toDto mapper', () => {
     };
 
     // when, then error
-    expect(() => toDtoArray(wrappedArrayResponse)).toThrow();
+    expect(() => fromBackendDtoArray(wrappedArrayResponse)).toThrow();
   });
 
   it('should throw error when just a single task', () => {
@@ -170,7 +232,7 @@ describe('toDto mapper', () => {
     const singleTaskResponse = { title: 'Test task 2', due: '2025-02-29T25:00:00Z', newfield: 'newfield2' };
 
     // when, then error
-    expect(() => toDtoArray(singleTaskResponse)).toThrow();
+    expect(() => fromBackendDtoArray(singleTaskResponse)).toThrow();
   });
 
   it('should throw error when one element wrong', () => {
@@ -182,7 +244,7 @@ describe('toDto mapper', () => {
       ],
     };
     // when, then error
-    expect(() => toDtoArray(responseMissingSecondTitle)).toThrow();
+    expect(() => fromBackendDtoArray(responseMissingSecondTitle)).toThrow();
   });
 });
 
@@ -192,8 +254,16 @@ describe('toDto mapper', () => {
 describe('DateTime validation', () => {
   // regular valid datetime, non-existing date, no timezone, no seconds
 
-  const givenIsoPass: string[] = ['2026-02-01T10:00:00Z', '2025-02-29T25:00:00Z'];
-  const givenIsoFail: string[] = ['2026-02-01', '25:00:00', '', '     ', '2026-03-12T22:51:00', '2026-03-25T02:40'];
+  const givenIsoPass: string[] = [
+    '2026-03-10T23:59:00+00:00',
+    '2024-03-10T12:30:45.250-05:30',
+    '2024-02-29T23:59:59+02:00',
+    '2019-02-29T23:59:59+01:00',
+  ];
+  const givenIsoFail: string[] = ['2026-03-10T23:59:00'];
+
+  const givenUtcPass: string[] = ['2026-02-01T10:00:00Z', '2025-02-29T25:00:00Z'];
+  const givenUtcFail: string[] = ['2026-02-01', '25:00:00', '', '     ', '2026-03-12T22:51:00', '2026-03-25T02:40'];
 
   const givenLocalPass: string[] = ['2026-03-12T22:51:00', '2026-03-25T02:40'];
   const givenLocalFail: string[] = [
@@ -205,11 +275,20 @@ describe('DateTime validation', () => {
     '     ',
   ];
 
-  test.each(givenIsoPass)('Datetime %p should pass isoDateTime', datetimeString => {
+  test.each(givenIsoPass)('Datetime %p should pass iso DateTime', datetimeString => {
     expect(isoDateTimeRegex.test(datetimeString)).toBe(true);
   });
 
-  test.each(givenIsoFail)('Datetime %p should fail isoDateTime', datetimeString => {
+  test.each(givenIsoFail)('Datetime %p should fail iso DateTime', datetimeString => {
+    expect(isoDateTimeRegex.test(datetimeString)).toBe(false);
+  });
+
+  test.each(givenUtcPass)('Datetime %p should pass utc DateTime', datetimeString => {
+    expect(utcDateTimeRegex.test(datetimeString)).toBe(true);
+  });
+
+  test.each(givenUtcFail)('Datetime %p should fail utc DateTime', datetimeString => {
+    expect(utcDateTimeRegex.test(datetimeString)).toBe(false);
     expect(isoDateTimeRegex.test(datetimeString)).toBe(false);
   });
 
@@ -221,12 +300,13 @@ describe('DateTime validation', () => {
     expect(localDateTimeOptionalSecondsRegex.test(datetimeString)).toBe(false);
   });
 
-  test.each(givenIsoPass)('IsoDatetime %p should have timezone and thus not pass local datetime', datetimeString => {
+  test.each(givenUtcPass)('IsoDatetime %p should have timezone and thus not pass local datetime', datetimeString => {
     expect(localDateTimeOptionalSecondsRegex.test(datetimeString)).toBe(false);
   });
 
   test.each(givenLocalPass)('local datetime %p should convert to isodatetime (UTC)', datetimeString => {
     const utc = new Date(datetimeString).toISOString();
+    expect(utcDateTimeRegex.test(utc)).toBe(true);
     expect(isoDateTimeRegex.test(utc)).toBe(true);
   });
 });

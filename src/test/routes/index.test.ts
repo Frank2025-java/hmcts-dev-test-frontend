@@ -1,5 +1,6 @@
-import type { Application } from 'express';
 import mockAxios from 'axios';
+import type { Application } from 'express';
+
 jest.mock('axios');
 
 import { registerRootRoutes } from '../../main/routes';
@@ -8,7 +9,7 @@ const expectedGetRoutes: string[] = ['/', '/demo'];
 const expectedPostRoutes: string[] = [];
 let actualGetRoutes: string[] = [];
 let actualPostRoutes: string[] = [];
-let handlers: Record<string, Function> = {};
+let handlers: Record<string, (req: Request, res: Response) => unknown> = {};
 
 const mockApp = {
   get: jest.fn((path, handler) => {
@@ -43,7 +44,7 @@ describe('Root routes registration', () => {
 
   it('Should have only handlers with 2 argumens', () => {
     Object.values(handlers).forEach(handler => {
-      expect(handler.length).toBe(2);
+      expect(handler).toHaveLength(2);
     });
   });
 });

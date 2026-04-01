@@ -1,25 +1,32 @@
-let testSubjectGet: Function;
-let testSubjectPost: Function;
+let testSubjectGet: RouteHandler;
+let testSubjectPost: RouteHandler;
 
 const expectedGetPage = 'task/create.njk';
 const expectedNextPageWarn = expectedGetPage;
 const expectedNextPageSuccess = '/task/list';
 
 import {
-  createMockApp,
-  createMockApi,
-  toDto,
+  Request,
+  Response,
+  RouteHandler,
   TaskDto,
   TaskRestApiResponse,
+  createMockApi,
+  createMockApp,
   expectRenderWithWarning,
+  toDto,
 } from './routes.test.base';
 
-// tesSubject with toDto mocked
+// tesSubject with toDto mocked by routes.test.base
+// eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/create';
 
 describe('task/create route', () => {
-  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<any>>, []>;
-  let spyResponse: { redirect: jest.Mock; render: jest.Mock };
+  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<TaskDto>>, []>;
+
+  const spyResponse = { redirect: jest.fn(), render: jest.fn() } as unknown as Response;
+  const spyRender = spyResponse.render as jest.Mock;
+  const spyRedirect = spyResponse.redirect as jest.Mock;
 
   const toDtoMock = toDto as jest.Mock;
 
@@ -43,23 +50,25 @@ describe('task/create route', () => {
 
     mockBackendCall = mockApi.Create.call as jest.Mock;
 
-    spyResponse = { redirect: jest.fn(), render: jest.fn() };
+    spyRender.mockClear();
+    spyRedirect.mockClear();
+    toDtoMock.mockClear();
   });
 
   it('Render Page on Get', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as Request;
 
     // when
     await testSubjectGet(givenReq, spyResponse);
 
     // then
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedGetPage);
+    expect(spyRender).toHaveBeenCalledWith(expectedGetPage);
   });
 
   it('Redirect on Post to List when successful Create', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as Request;
     const expectedReqDto = testDto;
     toDtoMock.mockReturnValue(expectedReqDto);
 
@@ -74,18 +83,18 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(expectedReqDto);
-    expect(spyResponse.redirect).toHaveBeenCalledWith(expectedNextPageSuccess);
-    expect(spyResponse.render).not.toHaveBeenCalled();
+    expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
+    expect(spyRender).not.toHaveBeenCalled();
   });
 
   it('Stay on page when fail on Create', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as Request;
     const expectedReqDto = testDto;
     toDtoMock.mockReturnValue(expectedReqDto);
 
     const givenResponseFailMsg = 'test errror message';
-    const givenResponseFail: TaskRestApiResponse<String> = {
+    const givenResponseFail: TaskRestApiResponse<TaskDto> = {
       data: givenResponseFailMsg,
       status: 500,
     };
@@ -96,13 +105,13 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(expectedReqDto);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, givenResponseFailMsg);
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, givenResponseFailMsg);
   });
 
   it('Stay on page on parsing error', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as Request;
     toDtoMock.mockImplementation(() => {
       throw new Error('DTO failure');
     });
@@ -112,7 +121,7 @@ describe('task/create route', () => {
 
     // then Create was never invoked
     expect(mockBackendCall).not.toHaveBeenCalled();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'DTO failure');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'DTO failure');
   });
 });

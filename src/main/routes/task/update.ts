@@ -1,20 +1,20 @@
 import { Application } from 'express';
 
 import type { TaskDto } from 'types/task.dto';
-import { toDto } from 'modules/task/mapper';
+
 import { TaskRestApiClient } from 'modules/task/backend';
+import { toDto } from 'modules/task/mapper';
+
 import { warning } from './error';
 
 export const routePath = '/task/update';
 
 export default function (app: Application, api: TaskRestApiClient): void {
   app.post(routePath, async (req, res) => {
-    let response = { data: '', status: 0 };
-
     try {
-      const task: TaskDto = await toDto(req.body);
+      const task: TaskDto = toDto(req.body);
 
-      response = await api.Update.call(task);
+      const response = await api.Update.call(task);
 
       if (response.status === 200) {
         // go to the task list page after updating a task
@@ -26,7 +26,7 @@ export default function (app: Application, api: TaskRestApiClient): void {
           form: req.body,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Stay on page, keep form data
       return res.render('task/view.njk', {
         warning: error,

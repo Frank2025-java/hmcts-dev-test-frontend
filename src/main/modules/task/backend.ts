@@ -1,18 +1,32 @@
-import axios from 'axios';
-import { config } from '../variables';
+import axios, { isAxiosError } from 'axios';
+
 import type { TaskDto } from 'types/task.dto';
+
+import { config } from '../variables';
 
 export interface AxiosClient {
   http: typeof axios;
 }
 
 export interface TaskRestApiResponse<T> {
-  data: T;
-  status: number;
+  data: T | string; // the type is T on the success status, otherwise string
+  status: number; // the success status value is defined on the REST api
 }
 
-export function TaskRestApi({ http }: AxiosClient) {
-  const call = async <TReq = any, TRes = any>(
+// return the {Root, Create,....} as a type, to allow api:TaskRestApiClient declaration
+export interface TaskRestApiClient {
+  Root: { call: () => Promise<TaskRestApiResponse<string>> };
+  Create: { call: (dto: TaskDto) => Promise<TaskRestApiResponse<TaskDto>> };
+  List: { call: () => Promise<TaskRestApiResponse<TaskDto[]>> };
+  View: { call: (id: string) => Promise<TaskRestApiResponse<TaskDto>> };
+  Update: { call: (dto: TaskDto) => Promise<TaskRestApiResponse<TaskDto>> };
+  UpdateStatus: { call: (id: string, status: string) => Promise<TaskRestApiResponse<TaskDto>> };
+  Delete: { call: (id: string) => Promise<TaskRestApiResponse<void>> };
+}
+
+/* eslint-disable no-console */
+export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
+  const call = async <TRes = unknown>(
     path: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     dto?: TaskDto
@@ -52,15 +66,29 @@ export function TaskRestApi({ http }: AxiosClient) {
         data: response.data as TRes,
         status: Number(response.status),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('API call error:', error);
 
-      const errResponse = error?.response;
-
-      return {
-        data: (errResponse?.data as TRes) ?? error.message,
-        status: Number(errResponse?.status ?? 0),
-      };
+      if (isAxiosError<string>(error)) {
+        if (error.response) {
+          // Backend responded with an error
+          return {
+            data: error.response.data,
+            status: Number(error.response.status),
+          };
+        } else {
+          // Network-level failure
+          return {
+            data: error.message,
+            status: 0,
+          };
+        }
+      } else {
+        return {
+          data: String(error),
+          status: 0,
+        };
+      }
     }
   };
 
@@ -88,6 +116,3 @@ export function TaskRestApi({ http }: AxiosClient) {
     },
   };
 }
-
-// return the {Root, Create,....} as a type, to allow api:TaskRestApiClient declaration
-export type TaskRestApiClient = ReturnType<typeof TaskRestApi>;

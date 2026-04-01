@@ -1,18 +1,30 @@
-let testSubjectGet: Function;
-let testSubjectPost: Function;
+let testSubjectGet: RouteHandler;
+let testSubjectPost: RouteHandler;
 
-//onst expectedGetPage = undefined;
 const expectedNextPageWarn = 'task/list.njk';
 const expectedNextPageSuccess = '/task/list';
 
-import { createMockApp, createMockApi, TaskRestApiResponse, expectRenderWithWarning } from './routes.test.base';
+import {
+  Request,
+  Response,
+  RouteHandler,
+  TaskDto,
+  TaskRestApiResponse,
+  createMockApi,
+  createMockApp,
+  expectRenderWithWarning,
+} from './routes.test.base';
 
-// tesSubject with toDto mocked
+// testSubject with mocks from routes.test.base
+// eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/updateStatus';
 
-describe('task/create route', () => {
-  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<any>>, []>;
-  let spyResponse: { redirect: jest.Mock; render: jest.Mock };
+describe('task/updateStatus route', () => {
+  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<TaskDto>>, []>;
+
+  const spyResponse = { redirect: jest.fn(), render: jest.fn() } as unknown as Response;
+  const spyRender = spyResponse.render as jest.Mock;
+  const spyRedirect = spyResponse.redirect as jest.Mock;
 
   beforeEach(() => {
     const mockApi = createMockApi();
@@ -27,7 +39,8 @@ describe('task/create route', () => {
 
     mockBackendCall = mockApi.UpdateStatus.call as jest.Mock;
 
-    spyResponse = { redirect: jest.fn(), render: jest.fn() };
+    spyRender.mockClear();
+    spyRedirect.mockClear();
   });
 
   it('No render on Get', async () => {
@@ -38,9 +51,9 @@ describe('task/create route', () => {
     // given
     const givenId = '1234';
     const givenStatus = 'Deleted';
-    const givenRequest = { body: { status: givenStatus }, params: { id: givenId } };
+    const givenRequest = { body: { status: givenStatus }, params: { id: givenId } } as unknown as Request;
 
-    const givenResponseOk: TaskRestApiResponse<any> = {
+    const givenResponseOk: TaskRestApiResponse<TaskDto> = {
       data: '',
       status: 200,
     };
@@ -51,17 +64,17 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus);
-    expect(spyResponse.redirect).toHaveBeenCalledWith(expectedNextPageSuccess);
-    expect(spyResponse.render).not.toHaveBeenCalled();
+    expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
+    expect(spyRender).not.toHaveBeenCalled();
   });
 
   it('Stay on List when fail on updateStatus', async () => {
     // given
     const givenId = '1234';
     const givenStatus = 'Deleted';
-    const givenRequest = { body: { status: givenStatus }, params: { id: givenId } };
+    const givenRequest = { body: { status: givenStatus }, params: { id: givenId } } as unknown as Request;
 
-    const givenResponseFail: TaskRestApiResponse<String> = {
+    const givenResponseFail: TaskRestApiResponse<TaskDto> = {
       data: 'test errror message',
       status: 500,
     };
@@ -72,20 +85,20 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'test errror message');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });
 
   it('Stay on List on error when id undefined', async () => {
     // given -- expected "Cannot destructure property 'id' of 'req.params' as it is undefined."
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as unknown as Request;
 
     // when, then propagate error
     await testSubjectPost(givenReq, spyResponse);
 
     // Ensure call was never invoked
     expect(mockBackendCall).not.toHaveBeenCalled();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'req.params');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'req.params');
   });
 });

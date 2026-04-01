@@ -1,8 +1,7 @@
-import request from 'supertest';
 import express from 'express';
+import request from 'supertest';
 
-import testSubject from '../../main/routes/home';
-import { routePath } from '../../main/routes/home';
+import testSubject, { routePath } from '../../main/routes/home';
 
 const expectedTemplate = 'home';
 
@@ -11,7 +10,8 @@ describe('Route Home Module', () => {
   describe('on GET', () => {
     test('should render home page', async () => {
       const testApp = express();
-      const renderMock = jest.fn(function (view, locals) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const renderMock = jest.fn(function (_view, _locals) {
         this.send('OK');
       });
       testApp.response.render = renderMock;

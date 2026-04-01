@@ -1,32 +1,39 @@
-import { Application } from 'express';
+import { Application, Request, Response } from 'express';
+
+import type { TaskRestApiResponse } from '../../../src/main/modules/task/backend';
 import { TaskRestApiClient } from '../../../src/main/modules/task/backend';
+import { fromBackendDto, fromBackendDtoArray, toDto } from '../../../src/main/modules/task/mapper';
+import type { TaskDto } from '../../../src/main/types/task.dto';
+
+// Re-export
+export { fromBackendDto, fromBackendDtoArray, toDto, Request, Response, TaskDto, TaskRestApiResponse };
 
 // --- Mock the mapper globally for all route tests ---
-import { toDto, toDtoArray } from '../../../src/main/modules/task/mapper';
 jest.mock('../../../src/main/modules/task/mapper', () => ({
   toDto: jest.fn(),
   toDtoArray: jest.fn(),
+  fromBackendDto: jest.fn(),
+  fromBackendDtoArray: jest.fn(),
 }));
 
-import type { TaskDto } from '../../../src/main/types/task.dto';
-
-import type { TaskRestApiResponse } from '../../../src/main/modules/task/backend';
-
-// Re-export
-export { toDto, toDtoArray, TaskDto, TaskRestApiResponse };
+export type RouteHandler = (req: Request, res: Response) => unknown;
 
 // Factory: create a fresh mock Express app
-export function createMockApp(capture: { getHandler?: (fn: Function) => void; postHandler?: (fn: Function) => void }) {
-  const app: any = {
-    get: jest.fn((path: any, ...handlers: any[]) => {
-      capture.getHandler?.(handlers[0]);
+export function createMockApp(capture: {
+  getHandler?: (fn: RouteHandler) => void;
+  postHandler?: (fn: RouteHandler) => void;
+}): Application {
+  const app = {
+    get: jest.fn((path: string, handler: RouteHandler) => {
+      capture.getHandler?.(handler);
       return app;
     }),
-    post: jest.fn((path: any, ...handlers: any[]) => {
-      capture.postHandler?.(handlers[0]);
+    post: jest.fn((path: string, handler: RouteHandler) => {
+      capture.postHandler?.(handler);
       return app;
     }),
-  };
+    use: jest.fn(),
+  } as unknown as Application;
 
   return app as unknown as Application;
 }
@@ -46,18 +53,18 @@ export function createMockApi(): TaskRestApiClient {
 
 // helper for the warning message on a page
 export function expectRenderWithWarning(
-  spyResponse: { render: jest.Mock },
+  spyRender: jest.Mock,
   expectedPage: string,
   expectedWarningSubstring: string
-) {
-  expect(spyResponse.render).toHaveBeenCalledWith(
+): void {
+  expect(spyRender).toHaveBeenCalledWith(
     expectedPage,
     expect.objectContaining({
       warning: expect.anything(),
     })
   );
 
-  const renderArgs = spyResponse.render.mock.calls[0][1];
+  const renderArgs = spyRender.mock.calls[0][1];
   const warning = renderArgs.warning;
 
   const warningText = warning instanceof Error ? warning.message : String(warning);

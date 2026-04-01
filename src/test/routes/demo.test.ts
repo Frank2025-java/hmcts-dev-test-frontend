@@ -1,8 +1,9 @@
-import { config } from '../../main/modules/variables';
 import axios from 'axios';
+import { Application } from 'express';
+import type { Request, Response } from 'express';
 
-import testSubject from '../../main/routes/demo';
-import { routePath } from '../../main/routes/demo';
+import { config } from '../../main/modules/variables';
+import testSubject, { routePath } from '../../main/routes/demo';
 
 const expectedTemplate = 'demo/home';
 const expectedApiUrl = `${config.demoUrl}/get-example-case`;
@@ -19,20 +20,17 @@ jest.spyOn(console, 'log').mockImplementation(() => {});
 
 /* eslint-disable jest/expect-expect */
 describe('Route Demo Module', () => {
-  let mockApp: any;
-  let testSubjectHandler: any;
+  let testSubjectHandler: (req: Request, res: Response) => unknown;
   let actualRoutePath: string;
-  let appGetMock: jest.Mock;
-  let getResponseMock: any;
+  const appGetMock: jest.Mock = jest.fn();
+  const getResponseMock = mockedAxios.get;
 
-  const req = {} as any;
+  // Fake Express app with only .get()
+  const mockApp = { get: appGetMock } as unknown as Application;
+
+  const req = {} as Request;
 
   beforeEach(() => {
-    // Fake Express app with only .get()
-    appGetMock = jest.fn();
-    mockApp = { get: appGetMock };
-    getResponseMock = mockedAxios.get;
-
     // Set up the app with the route using the mocked axios
     testSubject(mockApp, mockedAxios);
 
@@ -49,7 +47,7 @@ describe('Route Demo Module', () => {
   it('Should render page with API response on success', async () => {
     getResponseMock.mockResolvedValue(testResponse);
 
-    const res = { render: jest.fn() } as any;
+    const res = { render: jest.fn() } as unknown as Response;
 
     await testSubjectHandler(req, res);
 
@@ -62,7 +60,7 @@ describe('Route Demo Module', () => {
 
     getResponseMock.mockRejectedValue(testError);
 
-    const res = { render: jest.fn() } as any;
+    const res = { render: jest.fn() } as unknown as Response;
     await testSubjectHandler(req, res);
 
     expect(getResponseMock).toHaveBeenCalledWith(expectedApiUrl);

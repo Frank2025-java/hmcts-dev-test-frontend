@@ -1,17 +1,21 @@
-let testSubjectGet: Function;
-let testSubjectPost: Function;
+let testSubjectGet: RouteHandler;
+let testSubjectPost: RouteHandler;
 
 const expectedGetPage = 'task/bodyHtml';
 const expectedPageError = 'task/bodyHtml';
 
-import { createMockApp, createMockApi, TaskRestApiResponse } from './routes.test.base';
+import { Request, Response, RouteHandler, TaskRestApiResponse, createMockApi, createMockApp } from './routes.test.base';
 
-// tesSubject
+// testSubject with mocks by routes.test.base
+// eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/root';
 
 describe('task/ route', () => {
-  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<any>>, []>;
-  let spyResponse: { redirect: jest.Mock; render: jest.Mock };
+  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<string>>, []>;
+
+  const spyResponse = { redirect: jest.fn(), render: jest.fn() } as unknown as Response;
+  const spyRender = spyResponse.render as jest.Mock;
+  const spyRedirect = spyResponse.redirect as jest.Mock;
 
   beforeEach(() => {
     const mockApi = createMockApi();
@@ -26,14 +30,15 @@ describe('task/ route', () => {
 
     mockBackendCall = mockApi.Root.call as jest.Mock;
 
-    spyResponse = { redirect: jest.fn(), render: jest.fn() };
+    spyRender.mockClear();
+    spyRedirect.mockClear();
   });
 
   it('Render html response on successful backend call', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenHtmlBody: string = 'Welcome';
-    const givenResponseOk: TaskRestApiResponse<any> = {
+    const givenResponseOk: TaskRestApiResponse<string> = {
       data: '<html><head></head><body>' + givenHtmlBody + '</body></html>',
       status: 200,
     };
@@ -45,16 +50,16 @@ describe('task/ route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedGetPage, expectedRenderData);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedGetPage, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
   });
 
   it('Show error when fail on backend call', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenMsg = 'test errror message';
 
-    const givenResponse: TaskRestApiResponse<String> = {
+    const givenResponse: TaskRestApiResponse<string> = {
       data: givenMsg,
       status: 500,
     };
@@ -66,13 +71,13 @@ describe('task/ route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedPageError, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedPageError, expectedRenderData);
   });
 
   it('Show error on fail parsing html', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenForceCheerioParseErrorInput = {
       id: 666,
       title: 'Error',
@@ -80,21 +85,19 @@ describe('task/ route', () => {
       due: '2026-02-29T25:00:00Z',
     };
 
-    const givenResponseNonString: TaskRestApiResponse<any> = {
-      data: givenForceCheerioParseErrorInput,
+    const givenResponseNonString: TaskRestApiResponse<string> = {
+      data: String(givenForceCheerioParseErrorInput),
       status: 200,
     };
     mockBackendCall.mockResolvedValue(givenResponseNonString);
-
-    const spyResponse = { redirect: jest.fn(), render: jest.fn() };
 
     // when
     await testSubjectGet(givenReq, spyResponse);
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedPageError, expect.anything());
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedPageError, expect.anything());
   });
 
   it('No render on Post', async () => {

@@ -1,25 +1,32 @@
-let testSubjectGet: Function;
-let testSubjectPost: Function;
+let testSubjectGet: RouteHandler;
+let testSubjectPost: RouteHandler;
 
 const expectedGetPage = 'task/view.njk';
 const expectedNextPageWarn = expectedGetPage;
 const expectedNextPageSuccess = '/task/list';
 
 import {
-  createMockApp,
-  createMockApi,
-  toDto,
+  Request,
+  Response,
+  RouteHandler,
   TaskDto,
   TaskRestApiResponse,
+  createMockApi,
+  createMockApp,
   expectRenderWithWarning,
+  toDto,
 } from './routes.test.base';
 
-// tesSubject with toDto mocked
+// testSubject with toDto mocked by routes.test.base
+// eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/update';
 
 describe('task/update route', () => {
-  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<any>>, []>;
-  let spyResponse: { redirect: jest.Mock; render: jest.Mock };
+  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<TaskDto>>, []>;
+
+  const spyResponse = { redirect: jest.fn(), render: jest.fn() } as unknown as Response;
+  const spyRender = spyResponse.render as jest.Mock;
+  const spyRedirect = spyResponse.redirect as jest.Mock;
 
   const toDtoMock = toDto as jest.Mock;
 
@@ -44,7 +51,9 @@ describe('task/update route', () => {
 
     mockBackendCall = mockApi.Update.call as jest.Mock;
 
-    spyResponse = { redirect: jest.fn(), render: jest.fn() };
+    spyRender.mockClear();
+    spyRedirect.mockClear();
+    toDtoMock.mockClear();
   });
 
   it('No render on Get', async () => {
@@ -61,7 +70,7 @@ describe('task/update route', () => {
         due: '2026-12-31T23:59:59Z',
         status: 'Deleted',
       },
-    };
+    } as unknown as Request;
     const givenDto = testDto;
     toDtoMock.mockReturnValue(givenDto);
 
@@ -76,17 +85,17 @@ describe('task/update route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(givenDto);
-    expect(spyResponse.redirect).toHaveBeenCalledWith(expectedNextPageSuccess);
-    expect(spyResponse.render).not.toHaveBeenCalled();
+    expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
+    expect(spyRender).not.toHaveBeenCalled();
   });
 
   it('Stay on page when fail on backend', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as unknown as Request;
     const givenDto = testDto;
     toDtoMock.mockReturnValue(givenDto);
 
-    const givenResponseFail: TaskRestApiResponse<String> = {
+    const givenResponseFail: TaskRestApiResponse<TaskDto> = {
       data: 'test errror message',
       status: 500,
     };
@@ -97,13 +106,13 @@ describe('task/update route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith(givenDto);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'test errror message');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });
 
   it('Stay on page on parsing error', async () => {
     // given
-    const givenReq = { body: {} };
+    const givenReq = { body: {} } as unknown as Request;
     toDtoMock.mockImplementation(() => {
       throw new Error('DTO failure');
     });
@@ -113,7 +122,7 @@ describe('task/update route', () => {
 
     // Ensure Create.call was never invoked
     expect(mockBackendCall).not.toHaveBeenCalled();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'DTO failure');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'DTO failure');
   });
 });

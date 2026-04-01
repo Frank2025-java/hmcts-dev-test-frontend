@@ -40,78 +40,74 @@ The steps below are the first ones that I took, and are stored in this forked gi
 3. Run the Back-End demo-case application on port 4000. That should be provided from cloning the backend.
 4. `yarn start:dev`
 
-
 # Design
 
 ┌────────────────────────┐
-│        APP START       │
+│ APP START │
 └────────────┬───────────┘
-             │
-             ▼
+│
+▼
 ┌────────────────────────┐
-│       HOME VIEW        │
-│  (two buttons shown)   │
+│ HOME VIEW │
+│ (two buttons shown) │
 └────────────┬───────────┘
-             │
-     ┌───────┴───────────────┐
-     │                       │
-     ▼                       ▼
-┌────────────────┐   ┌────────────────────┐
-│ DEMO SUB-APP   │   │   TASK SUB-APP     │
-│ /demo route    │   │ /task/list route   │
-└───────┬────────┘   └──────────┬────────┘
-        │                         │
-        ▼                         ▼
-┌────────────────────────────┐   ┌────────────────────────────┐
-│ demo view.njk              │   │ task/list view.njk         │
-│ makes HTTP GET → demo API  │   │ makes HTTP GET → backend   │
-└────────────────────────────┘   │ /task/get-all-tasks        │
-                                 └───────────┬────────────────┘
-                                             │
-                                             ▼
-                         ┌──────────────────────────────────────┐
-                         │ task/list view shows:                │
-                         │  - Create Task button                │
-                         │  - For each task: Manage button      │
-                         └───────────┬──────────────────────────┘
-                                     │
-                                     ▼
-                        ┌──────────────────────────────┐
-                        │ /task/view/:id               │
-                        │ Renders view.njk             │
-                        │ Shows:                       │
-                        │  - Delete button             │
-                        │  - Status dropdown + Update  │
-                        └───────────┬──────────────────┘
-                                    │
-               ┌────────────────────┼──────────────────────────┐
-               │                    │                          │
-               ▼                    ▼                          ▼
-   ┌────────────────────┐  ┌──────────────────────┐  ┌────────────────────────┐
-   │ DELETE BUTTON       │  │ UPDATE STATUS BUTTON │  │ CREATE TASK BUTTON     │
-   │ /task/delete/:id    │  │ /task/update/:id     │  │ /task/create           │
-   └──────────┬──────────┘  │ /status              │  └──────────┬────────────┘
-              │             └──────────┬───────────┘             │
-              ▼                        │                         ▼
-   ┌──────────────────────────────┐    │             ┌──────────────────────────────┐
-   │ delete.ts                    │    │             │ create.njk                   │
-   │ HTTP DELETE → backend        │    │             │ form POST → /task/create     │
-   │ /task/delete/{id}            │    │             └──────────┬───────────────────┘
-   └──────────┬───────────────────┘    │                        │
-              │                        ▼                        ▼
-              │             ┌──────────────────────────────┐   ┌──────────────────────────────┐
-              │             │ updateStatus.ts               │   │ create.ts                    │
-              │             │ HTTP PUT → backend            │   │ HTTP POST → backend          │
-              │             │ /task/update/{id}/status/{s}  │   │ /task/create                 │
-              │             └──────────┬───────────────────┘   └──────────┬───────────────────┘
-              │                        │                                   │
-              ▼                        ▼                                   ▼
-   ┌──────────────────────────────┐   ┌──────────────────────────────┐   ┌──────────────────────────────┐
-   │ redirect → /task/list        │   │ redirect → /task/list        │   │ redirect → /task/list        │
-   └──────────────────────────────┘   └──────────────────────────────┘   └──────────────────────────────┘
-
-
-
+│
+┌───────┴───────────────┐
+│ │
+▼ ▼
+┌────────────────┐ ┌────────────────────┐
+│ DEMO SUB-APP │ │ TASK SUB-APP │
+│ /demo route │ │ /task/list route │
+└───────┬────────┘ └──────────┬────────┘
+│ │
+▼ ▼
+┌────────────────────────────┐ ┌────────────────────────────┐
+│ demo view.njk │ │ task/list view.njk │
+│ makes HTTP GET → demo API │ │ makes HTTP GET → backend │
+└────────────────────────────┘ │ /task/get-all-tasks │
+└───────────┬────────────────┘
+│
+▼
+┌──────────────────────────────────────┐
+│ task/list view shows: │
+│ - Create Task button │
+│ - For each task: Manage button │
+└───────────┬──────────────────────────┘
+│
+▼
+┌──────────────────────────────┐
+│ /task/view/:id │
+│ Renders view.njk │
+│ Shows: │
+│ - Delete button │
+│ - Status dropdown + Update │
+└───────────┬──────────────────┘
+│
+┌────────────────────┼──────────────────────────┐
+│ │ │
+▼ ▼ ▼
+┌────────────────────┐ ┌──────────────────────┐ ┌────────────────────────┐
+│ DELETE BUTTON │ │ UPDATE STATUS BUTTON │ │ CREATE TASK BUTTON │
+│ /task/delete/:id │ │ /task/update/:id │ │ /task/create │
+└──────────┬──────────┘ │ /status │ └──────────┬────────────┘
+│ └──────────┬───────────┘ │
+▼ │ ▼
+┌──────────────────────────────┐ │ ┌──────────────────────────────┐
+│ delete.ts │ │ │ create.njk │
+│ HTTP DELETE → backend │ │ │ form POST → /task/create │
+│ /task/delete/{id} │ │ └──────────┬───────────────────┘
+└──────────┬───────────────────┘ │ │
+│ ▼ ▼
+│ ┌──────────────────────────────┐ ┌──────────────────────────────┐
+│ │ updateStatus.ts │ │ create.ts │
+│ │ HTTP PUT → backend │ │ HTTP POST → backend │
+│ │ /task/update/{id}/status/{s} │ │ /task/create │
+│ └──────────┬───────────────────┘ └──────────┬───────────────────┘
+│ │ │
+▼ ▼ ▼
+┌──────────────────────────────┐ ┌──────────────────────────────┐ ┌──────────────────────────────┐
+│ redirect → /task/list │ │ redirect → /task/list │ │ redirect → /task/list │
+└──────────────────────────────┘ └──────────────────────────────┘ └──────────────────────────────┘
 
 # Troubleshoot
 
@@ -148,3 +144,24 @@ glob
 
 _/C=GB/ST=A/L=B/O=C/OU=D/CN=E_ gets rewitten to _C:/Users/.../PortableGit/C=GB/ST=A/L=B/O=C/OU=D/CN=E_
 by Git Bash on Windows. It needs an additional slash.
+
+## Troubleshoot Lint
+
+Lint should be configured to be platform independent, so need to adjust the carriage returns for windows:
+
+```
+'linebreak-style': 'off',
+```
+
+Add because we have added alias paths in our code, Lint needs to support that as well.
+
+``
+yarn add -D eslint-import-resolver-alias
+``
+
+Running locally Lint cannot handle the large amount of files, and in _package.json_ we
+have to add extra double quotes around _**/*.scss_ .
+
+```
+"lint": "stylelint \"**/*.scss\" -v -q && eslint . --ext .js,.ts && prettier --check .",
+```

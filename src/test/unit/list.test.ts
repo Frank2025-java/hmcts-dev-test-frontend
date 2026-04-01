@@ -1,27 +1,34 @@
-let testSubjectGet: Function;
-let testSubjectPost: Function;
+let testSubjectGet: RouteHandler;
+let testSubjectPost: RouteHandler;
 
 //const expectedGetPage = 'task/list.njk';
 const expectedNextPageWarn = 'task/list.njk';
 const expectedNextPageSuccess = 'task/list';
 
 import {
-  createMockApp,
-  createMockApi,
-  toDtoArray,
+  Request,
+  Response,
+  RouteHandler,
   TaskDto,
   TaskRestApiResponse,
+  createMockApi,
+  createMockApp,
   expectRenderWithWarning,
+  fromBackendDtoArray,
 } from './routes.test.base';
 
-// tesSubject with toDto mocked
+// tesSubject with fromBackendDtoArray mocked by routes.test.base
+// eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/list';
 
-describe('task/create route', () => {
-  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<any>>, []>;
-  let spyResponse: { redirect: jest.Mock; render: jest.Mock };
+describe('task/list route', () => {
+  let mockBackendCall: jest.Mock<Promise<TaskRestApiResponse<TaskDto[]>>, []>;
 
-  const mockToDtoArray = toDtoArray as jest.Mock;
+  const spyResponse = { redirect: jest.fn(), render: jest.fn() } as unknown as Response;
+  const spyRender = spyResponse.render as jest.Mock;
+  const spyRedirect = spyResponse.redirect as jest.Mock;
+
+  const mockFromBackendDtoArray = fromBackendDtoArray as jest.Mock;
 
   beforeEach(() => {
     const mockApi = createMockApi();
@@ -36,23 +43,25 @@ describe('task/create route', () => {
 
     mockBackendCall = mockApi.List.call as jest.Mock;
 
-    spyResponse = { redirect: jest.fn(), render: jest.fn() };
+    spyRender.mockClear();
+    spyRedirect.mockClear();
+    mockFromBackendDtoArray.mockClear();
   });
 
   it('Render List response on successful get-all-tasks', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenDtos: TaskDto[] = [
       { id: '2', title: 'Test task 2', description: 'Something', due: '2025-01-01T10:00:00Z', status: 'Initial' },
       { id: '1', title: 'Test task 1', description: '', due: '2025-02-01T10:00:00Z', status: 'Initial' },
       { id: '3', title: 'Test task 3', description: null, due: '2025-03-01T10:00:00Z', status: 'Deleted' },
     ];
-    const givenResponseOk: TaskRestApiResponse<any> = {
+    const givenResponseOk: TaskRestApiResponse<TaskDto[]> = {
       data: givenDtos,
       status: 200,
     };
     mockBackendCall.mockResolvedValue(givenResponseOk);
-    mockToDtoArray.mockReturnValue(givenDtos);
+    mockFromBackendDtoArray.mockReturnValue(givenDtos);
 
     const expectedRenderData = {
       tasks: [
@@ -68,22 +77,22 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
   });
 
   it('Render List response of single item on successful get-all-tasks', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenDtos: TaskDto[] = [
       { id: '1', title: 'Test task 1', description: '', due: '2025-02-01T10:00:00Z', status: 'Initial' },
     ];
-    const givenResponseSingleItem: TaskRestApiResponse<any> = {
+    const givenResponseSingleItem: TaskRestApiResponse<TaskDto[]> = {
       data: givenDtos,
       status: 200,
     };
     mockBackendCall.mockResolvedValue(givenResponseSingleItem);
-    mockToDtoArray.mockReturnValue(givenDtos);
+    mockFromBackendDtoArray.mockReturnValue(givenDtos);
 
     const expectedRenderData = {
       tasks: givenDtos,
@@ -95,14 +104,14 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
   });
 
   it('Render List response no items error on get-all-tasks', async () => {
     // given
-    const givenReq = {};
-    const givenResponseNone: TaskRestApiResponse<any> = {
+    const givenReq = {} as Request;
+    const givenResponseNone: TaskRestApiResponse<TaskDto[]> = {
       data: 'none found!',
       status: 400,
     };
@@ -121,15 +130,15 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
   });
 
   it('Stay on List when fail on get-all-tasks', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
 
-    const givenResponse: TaskRestApiResponse<String> = {
+    const givenResponse: TaskRestApiResponse<TaskDto[]> = {
       data: 'test errror message',
       status: 500,
     };
@@ -141,22 +150,22 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, 'test errror message');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });
 
   it('Stay on List when fail on TaskDto parsing', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenDtos: TaskDto[] = [
       { id: '1', title: 'Test task 1', description: '', due: '2025-02-29T25:00:00Z', status: 'Initial' },
     ];
-    const givenResponseSingleItem: TaskRestApiResponse<any> = {
+    const givenResponseSingleItem: TaskRestApiResponse<TaskDto[]> = {
       data: givenDtos,
       status: 200,
     };
     mockBackendCall.mockResolvedValue(givenResponseSingleItem);
-    mockToDtoArray.mockImplementation(() => {
+    mockFromBackendDtoArray.mockImplementation(() => {
       throw new Error('29 of feb issue');
     });
 
@@ -165,18 +174,18 @@ describe('task/create route', () => {
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expectRenderWithWarning(spyResponse, expectedNextPageWarn, '29 of feb issue');
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expectRenderWithWarning(spyRender, expectedNextPageWarn, '29 of feb issue');
   });
 
   it('Ignoring missing id', async () => {
     // given
-    const givenReq = {};
+    const givenReq = {} as Request;
     const givenDtosWithoutIds: TaskDto[] = [
       { title: 'Test task 2', description: null, due: '2025-01-01T10:00:00Z', status: 'Deleted' },
       { title: 'Test task 1', description: '', due: '2025-02-01T10:00:00Z', status: 'Initial' },
     ];
-    const givenResponseUnexpected: TaskRestApiResponse<any> = {
+    const givenResponseUnexpected: TaskRestApiResponse<TaskDto[]> = {
       data: givenDtosWithoutIds,
       status: 200,
     };
@@ -187,15 +196,15 @@ describe('task/create route', () => {
     };
 
     mockBackendCall.mockResolvedValue(givenResponseUnexpected);
-    mockToDtoArray.mockReturnValue(givenDtosWithoutIds);
+    mockFromBackendDtoArray.mockReturnValue(givenDtosWithoutIds);
 
     // when
     await testSubjectGet(givenReq, spyResponse);
 
     // then
     expect(mockBackendCall).toHaveBeenCalledWith();
-    expect(spyResponse.redirect).not.toHaveBeenCalled();
-    expect(spyResponse.render).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
+    expect(spyRedirect).not.toHaveBeenCalled();
+    expect(spyRender).toHaveBeenCalledWith(expectedNextPageSuccess, expectedRenderData);
   });
 
   it('No render on Post', async () => {

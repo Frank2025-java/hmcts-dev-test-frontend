@@ -1,28 +1,41 @@
-import axios from 'axios';
+import type { AxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 
 // silence dotenv config during testing
 jest.mock('dotenv', () => ({
   config: jest.fn(),
 }));
-import { config } from '../../main/modules/variables';
 
-import { TaskRestApi } from '../../main/modules/task/backend';
+import { TaskRestApi, TaskRestApiResponse } from '../../main/modules/task/backend';
+import { config } from '../../main/modules/variables';
 import { Status } from '../../main/types/status';
-import { taskDto } from '../../main/types/task.dto';
+import { TaskDto, taskDto } from '../../main/types/task.dto';
 
 // Suppress console during tests to keep output clean
 jest.spyOn(console, 'log').mockImplementation(() => {});
 jest.spyOn(console, 'error').mockImplementation(() => {});
 
 // mock the actual backend rest api calls
-jest.mock('axios');
-const mockAxios = axios as jest.Mocked<typeof axios>;
-const mockGet = mockAxios.get as jest.Mock;
-const mockPost = mockAxios.post as jest.Mock;
-const mockPut = mockAxios.put as jest.Mock;
-const mockDelete = mockAxios.delete as jest.Mock;
+jest.mock('axios', () => {
+  const actual = jest.requireActual('axios');
+  return {
+    ...actual, // keep all real named exports
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    default: {
+      // mock only the default axios instance
+      ...actual.default, // keep real properties like create(), defaults, interceptors
+    },
+  };
+});
+const mockGet = axios.get as jest.Mock;
+const mockPost = axios.post as jest.Mock;
+const mockPut = axios.put as jest.Mock;
+const mockDelete = axios.delete as jest.Mock;
 
-const testSubject = TaskRestApi({ http: mockAxios as any });
+const testSubject = TaskRestApi({ http: axios });
 
 describe('TaskRestApi backend client', () => {
   const expectedTaskBaseUri = `${config.backendUrl}${config.basepath}`;
@@ -30,27 +43,6 @@ describe('TaskRestApi backend client', () => {
   const testDue = '2026-02-29T10:00:00Z';
   const testDtoIn = taskDto(undefined, 'Test', null, testDue, Status.Init);
   const testDtoOut = taskDto('123', 'Test', '', testDue, Status.Init);
-
-  const mockErrorStatus = 400;
-  const mockErrorMsg = { error: 'backend return message' };
-  const mockError = {
-    response: {
-      status: mockErrorStatus,
-      statusText: 'Bad Request',
-      data: mockErrorMsg,
-      headers: {},
-      config: {},
-    },
-  };
-  const expectedErrorResponse = { data: mockErrorMsg, status: mockErrorStatus };
-
-  // axios does not come back with a response on cors erros, network errors, or a timeout
-  const mockNoResponseErrorMessage = 'CORS error';
-  const mockNoResponseError = {
-    message: mockNoResponseErrorMessage,
-    response: undefined,
-  };
-  const expectedNoResponseErrorResponse = { data: mockNoResponseErrorMessage, status: 0 };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,13 +58,13 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockPost.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: testDtoOut, status: 201 };
+    const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 201 };
 
     // when
     const actual = await testSubject.Create.call(testDtoIn);
 
     // then
-    expect(mockAxios.post).toHaveBeenCalledWith(`${expectedTaskBaseUri}/create`, testDtoIn);
+    expect(mockPost).toHaveBeenCalledWith(`${expectedTaskBaseUri}/create`, testDtoIn);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -90,7 +82,7 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockGet.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: mockData, status: 200 };
+    const expectedResponse: TaskRestApiResponse<TaskDto[]> = { data: mockData, status: 200 };
 
     // when
     const actual = await testSubject.List.call();
@@ -111,7 +103,7 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockGet.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: testDtoOut, status: 200 };
+    const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 200 };
 
     // when
     const actual = await testSubject.View.call(givenId);
@@ -132,7 +124,7 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockPost.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: testDtoOut, status: 200 };
+    const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 200 };
 
     // when
     const actual = await testSubject.Update.call(given);
@@ -154,13 +146,13 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockPut.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: testDtoOut, status: 200 };
+    const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 200 };
 
     // when
     const actual = await testSubject.UpdateStatus.call(givenId, givenStatus);
 
     // then
-    expect(mockAxios.put).toHaveBeenCalledWith(`${expectedTaskBaseUri}/update/123/status/Deleted`);
+    expect(mockPut).toHaveBeenCalledWith(`${expectedTaskBaseUri}/update/123/status/Deleted`);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -174,155 +166,128 @@ describe('TaskRestApi backend client', () => {
       config: {},
     };
     mockDelete.mockResolvedValue(mockOkResponse);
-    const expectedResponse = { data: undefined, status: 204 };
+    const expectedResponse: TaskRestApiResponse<void> = { data: undefined, status: 204 };
 
     // when
     const actual = await testSubject.Delete.call(givenId);
 
     // then
-    expect(mockAxios.delete).toHaveBeenCalledWith(`${expectedTaskBaseUri}/delete/123`);
+    expect(mockDelete).toHaveBeenCalledWith(`${expectedTaskBaseUri}/delete/123`);
     expect(actual).toEqual(expectedResponse);
   });
+});
 
-  it('should wrap server side error on create', async () => {
+describe('Wrapping of errors', () => {
+  const testId = '123';
+  const testStatus = Status.Deleted;
+  const testDtoIn = {} as TaskDto;
+
+  const mockBackendErrorStatus = 400;
+  const mockBackendErrorMsg = 'backend return message';
+  const mockBackendError = {
+    response: {
+      status: mockBackendErrorStatus,
+      statusText: 'Bad Request',
+      data: mockBackendErrorMsg,
+      headers: {},
+      config: {},
+    },
+    isAxiosError: true,
+  } as unknown as AxiosError<string>;
+  const expectedErrorResponse = { data: mockBackendErrorMsg, status: mockBackendErrorStatus };
+
+  // axios does come back with a response on network errors or a timeout
+  const mockAxiosErrorMessage = 'Axios error msg';
+  const mockAxiosError = {
+    message: mockAxiosErrorMessage,
+    response: undefined,
+    isAxiosError: true,
+  } as unknown as AxiosError<string>;
+  const expectedAxiosErrorResponse = { data: mockAxiosErrorMessage, status: 0 };
+
+  // browser error, like Cors error is not an Axios error
+  const mockBrowserError = {
+    message: 'CORS error',
+    response: undefined,
+  };
+  const expectedBrowserErrorResponse = { data: String(mockBrowserError), status: 0 };
+
+  type ErrorCase = [_label: string, data: { given: unknown; expected: TaskRestApiResponse<string> }];
+  const givenErrorExpectWrap: ErrorCase[] = [
+    ['backend error', { given: mockBackendError, expected: expectedErrorResponse }],
+    ['network error', { given: mockAxiosError, expected: expectedAxiosErrorResponse }],
+    ['browser error', { given: mockBrowserError, expected: expectedBrowserErrorResponse }],
+  ];
+
+  test('Should use real isAxiosError implementation', () => {
+    expect(isAxiosError(mockBackendError)).toBe(true);
+    expect(isAxiosError(mockAxiosError)).toBe(true);
+    expect(isAxiosError(mockBrowserError)).toBe(false);
+  });
+
+  it.each(givenErrorExpectWrap)('should wrap %s on create', async (_label, { given, expected }) => {
     // given
-    mockPost.mockRejectedValue(mockError);
+    mockPost.mockRejectedValue(given);
 
     // when
     const actual = await testSubject.Create.call(testDtoIn);
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
+    expect(actual).toEqual(expected);
   });
 
-  it('should wrap server side error on get-all-tasks', async () => {
+  it.each(givenErrorExpectWrap)('should wrap %s on get-all-tasks', async (_label, { given, expected }) => {
     // given
-    mockGet.mockRejectedValue(mockError);
+    mockGet.mockRejectedValue(given);
 
     // when
     const actual = await testSubject.List.call();
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
+    expect(actual).toEqual(expected);
   });
 
-  it('should wrap server side error on get', async () => {
+  it.each(givenErrorExpectWrap)('should wrap %s on get', async (_label, { given, expected }) => {
     // given
-    const givenId = '123';
-    mockGet.mockRejectedValue(mockError);
+    mockGet.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.View.call(givenId);
+    const actual = await testSubject.View.call(testId);
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
+    expect(actual).toEqual(expected);
   });
 
-  it('should wrap server side error on update', async () => {
+  it.each(givenErrorExpectWrap)('should wrap %s on update', async (_label, { given, expected }) => {
     // given
-    const given = testDtoIn;
-    mockPost.mockRejectedValue(mockError);
+    mockPost.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.Update.call(given);
+    const actual = await testSubject.Update.call(testDtoIn);
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
+    expect(actual).toEqual(expected);
   });
 
-  it('should wrap server side error on update status', async () => {
+  it.each(givenErrorExpectWrap)('should wrap %s on update status', async (_label, { given, expected }) => {
     // given
-    const givenId = '123';
-    const givenStatus = Status.Deleted;
-    mockPut.mockRejectedValue(mockError);
+    mockPut.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.UpdateStatus.call(givenId, givenStatus);
+    const actual = await testSubject.UpdateStatus.call(testId, testStatus);
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
+    expect(actual).toEqual(expected);
   });
 
-  it('should wrap server side error on delete', async () => {
+  it.each(givenErrorExpectWrap)('should wrap %s on delete', async (_label, { given, expected }) => {
     // given
-    const givenId = '123';
-    mockDelete.mockRejectedValue(mockError);
+    mockDelete.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.Delete.call(givenId);
+    const actual = await testSubject.Delete.call(testId);
 
     // then
-    expect(actual).toEqual(expectedErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on create', async () => {
-    // given
-    mockPost.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.Create.call(testDtoIn);
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on get-all-tasks', async () => {
-    // given
-    mockGet.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.List.call();
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on get', async () => {
-    // given
-    const givenId = '123';
-    mockGet.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.View.call(givenId);
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on update', async () => {
-    // given
-    const given = testDtoIn;
-    mockPost.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.Update.call(given);
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on update status', async () => {
-    // given
-    const givenId = '123';
-    const givenStatus = Status.Deleted;
-    mockPut.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.UpdateStatus.call(givenId, givenStatus);
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
-  });
-
-  it('should wrap no response error like cors, on delete', async () => {
-    // given
-    const givenId = '123';
-    mockDelete.mockRejectedValue(mockNoResponseError);
-
-    // when
-    const actual = await testSubject.Delete.call(givenId);
-
-    // then
-    expect(actual).toEqual(expectedNoResponseErrorResponse);
+    expect(actual).toEqual(expected);
   });
 });

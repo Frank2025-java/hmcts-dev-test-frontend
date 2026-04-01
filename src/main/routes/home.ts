@@ -1,4 +1,5 @@
 import { Application } from 'express';
+
 import { config } from '../modules/variables';
 
 export const routePath = '/';
@@ -9,8 +10,8 @@ export default function (app: Application): void {
 
   app.get(routePath, async (req, res) => {
     res.render('home', {
-      urlBackEnd: urlBackEnd,
-      urlDemo: urlDemo,
+      urlBackEnd,
+      urlDemo,
     });
   });
 }

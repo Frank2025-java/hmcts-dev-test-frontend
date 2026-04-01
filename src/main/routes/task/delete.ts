@@ -1,6 +1,7 @@
 import { Application } from 'express';
 
 import { TaskRestApiClient } from 'modules/task/backend';
+
 import { warning } from './error';
 
 export const routePath = '/task/delete/:id';
