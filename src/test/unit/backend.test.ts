@@ -6,8 +6,16 @@ jest.mock('dotenv', () => ({
   config: jest.fn(),
 }));
 
+jest.mock('../../main/modules/task/backendUrl', () => ({
+  getBackend: jest.fn() as jest.MockedFunction<() => string>,
+  setBackend: jest.fn() as jest.MockedFunction<(url: string) => void>,
+}));
+// eslint-disable-next-line import/order
+import { getBackend } from '../../main/modules/task/backendUrl';
+const mockedGetBackend = getBackend as jest.MockedFunction<() => string>;
+
+// eslint-disable-next-line import/order
 import { TaskRestApi, TaskRestApiResponse } from '../../main/modules/task/backend';
-import { config } from '../../main/modules/variables';
 import { Status } from '../../main/types/status';
 import { TaskDto, taskDto } from '../../main/types/task.dto';
 
@@ -38,7 +46,7 @@ const mockDelete = axios.delete as jest.Mock;
 const testSubject = TaskRestApi({ http: axios });
 
 describe('TaskRestApi backend client', () => {
-  const expectedTaskBaseUri = `${config.backendUrl}${config.basepath}`;
+  const givenTaskBaseUri = 'http://x/y';
 
   const testDue = '2026-02-29T10:00:00Z';
   const testDtoIn = taskDto(undefined, 'Test', null, testDue, Status.Init);
@@ -46,6 +54,7 @@ describe('TaskRestApi backend client', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedGetBackend.mockReturnValue(givenTaskBaseUri);
   });
 
   it('should call create', async () => {
@@ -64,7 +73,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.Create.call(testDtoIn);
 
     // then
-    expect(mockPost).toHaveBeenCalledWith(`${expectedTaskBaseUri}/create`, testDtoIn);
+    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/create`, testDtoIn);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -88,7 +97,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.List.call();
 
     // then
-    expect(mockGet).toHaveBeenCalledWith(`${expectedTaskBaseUri}/get-all-tasks`);
+    expect(mockGet).toHaveBeenCalledWith(`${givenTaskBaseUri}/get-all-tasks`);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -109,7 +118,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.View.call(givenId);
 
     // then
-    expect(mockGet).toHaveBeenCalledWith(`${expectedTaskBaseUri}/get/123`);
+    expect(mockGet).toHaveBeenCalledWith(`${givenTaskBaseUri}/get/123`);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -130,7 +139,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.Update.call(given);
 
     // then
-    expect(mockPost).toHaveBeenCalledWith(`${expectedTaskBaseUri}/update`, given);
+    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/update`, given);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -152,7 +161,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.UpdateStatus.call(givenId, givenStatus);
 
     // then
-    expect(mockPut).toHaveBeenCalledWith(`${expectedTaskBaseUri}/update/123/status/Deleted`);
+    expect(mockPut).toHaveBeenCalledWith(`${givenTaskBaseUri}/update/123/status/Deleted`);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -172,7 +181,7 @@ describe('TaskRestApi backend client', () => {
     const actual = await testSubject.Delete.call(givenId);
 
     // then
-    expect(mockDelete).toHaveBeenCalledWith(`${expectedTaskBaseUri}/delete/123`);
+    expect(mockDelete).toHaveBeenCalledWith(`${givenTaskBaseUri}/delete/123`);
     expect(actual).toEqual(expectedResponse);
   });
 });

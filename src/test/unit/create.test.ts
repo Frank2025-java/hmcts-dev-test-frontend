@@ -17,7 +17,7 @@ import {
   toDto,
 } from './routes.test.base';
 
-// tesSubject with toDto mocked by routes.test.base
+// testSubject with toDto mocked by routes.test.base
 // eslint-disable-next-line import/order
 import testSubject from '../../../src/main/routes/task/create';
 

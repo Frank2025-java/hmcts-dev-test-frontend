@@ -109,6 +109,11 @@ The steps below are the first ones that I took, and are stored in this forked gi
 │ redirect → /task/list │ │ redirect → /task/list │ │ redirect → /task/list │
 └──────────────────────────────┘ └──────────────────────────────┘ └──────────────────────────────┘
 
+# Technology Stack
+
+* Project TypeScript: 5.9.3
+
+
 # Troubleshoot
 
 Working on a Windows machine with a maiden VSC did not allow `yarn start:dev` to run without changes.

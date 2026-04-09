@@ -8,21 +8,35 @@ but ultimately it is up to you -->
 {% block content %}
  <h1 class="govuk-heading-xl">Welcome to Frank's HM Court & Tribunal Service Developer's Application Test!</h1>
 
+<form method="post" action="/select-task-backend">
 
+  <div class="connection-status">
+    <span id="taskAwsSpinner" class="button-spinner" style="display:none;"></span>
+    <span id="taskAwsSpinnerLabel" class="govuk-body">Checking service {{urlBackEndAws}} …</span>
+  </div>
 
-<div class="connection-status">
-  <span id="taskSpinner" class="button-spinner" style="display:none;"></span>
-  <span id="taskSpinnerLabel" class="govuk-body">Checking service {{urlBackEnd}} …</span>
-</div>
+  <input type="hidden" name="backend" value="{{urlBackEndAws}}" />
 
-<a id="taskButton"
-   href="/task/list" 
-   role="button" 
-   draggable="false" 
-   class="govuk-button govuk-button--secondary">
-Show Task App
-</a>
+  <button id="taskAwsButton" class="govuk-button govuk-button--secondary" disabled>
+    Show AWS Task App
+  </button>
 
+</form>
+
+<form method="post" action="/select-task-backend">
+
+  <div class="connection-status">
+    <span id="taskSpinner" class="button-spinner" style="display:none;"></span>
+    <span id="taskSpinnerLabel" class="govuk-body">Checking service {{urlBackEnd}} …</span>
+  </div>
+
+  <input type="hidden" name="backend" value="{{urlBackEnd}}" />
+
+  <button id="taskButton" class="govuk-button govuk-button--secondary" disabled>
+    Show Local Task App
+  </button>
+
+</form>
 
 <div class="connection-status">
   <span id="demoSpinner" class="button-spinner" style="display:none;"></span>
@@ -42,7 +56,8 @@ Show Gov Demo
     const button = document.getElementById(idPrefix + "Button");
     const spinner = document.getElementById(idPrefix + "Spinner");
     const label = document.getElementById(idPrefix + "SpinnerLabel");
-    const urlMessage = `Service <a href="${urlToCheck}" target="_blank">${urlToCheck}</a>`
+    const rootUrl = urlToCheck+'/';
+    const urlMessage = `Service <a href="${rootUrl}" target="_blank">${rootUrl}</a>`
 
     button.classList.add("govuk-button--secondary");
     button.classList.remove("button-ready");
@@ -56,23 +71,47 @@ Show Gov Demo
 
     // Ping health endpoint
     const response = await Promise.race([
-      fetch(urlToCheck, {method: "HEAD" }).catch(() => ({ ok: false })),
+      fetch(rootUrl, {method: "HEAD" }).catch(() => ({ ok: false })),
       timeout
     ]);
 
     if (response.ok) {
-        button.classList.add("button-ready");
-        button.classList.remove("govuk-button--secondary");
-        label.innerHTML = `${urlMessage} ok`;
+      button.classList.add("button-ready");
+      button.classList.remove("govuk-button--secondary");
+      button.disabled = false;
+      label.innerHTML = `${urlMessage} ok`;
     } else {
-        label.innerHTML = `${urlMessage} not available`;
+      button.classList.remove("button-ready");
+      button.classList.add("govuk-button");
+      button.classList.add("govuk-button--secondary");
+      button.disabled = true;
+      label.innerHTML = `${urlMessage} not available`;
     }
 
     spinner.style.display = "none"
   }
 
-  window.addEventListener('load', () => {
+  function resetButtonState(idPrefix) {
+    const button = document.getElementById(idPrefix + "Button");
+    const spinner = document.getElementById(idPrefix + "Spinner");
+    const label = document.getElementById(idPrefix + "SpinnerLabel");
+
+    button.disabled = true;
+    button.classList.remove("button-ready");
+    button.classList.add("govuk-button--secondary");
+
+    spinner.style.display = "none";
+    label.innerHTML = "Checking…";
+  }
+
+  window.addEventListener('pageshow', () => {
+    // Reset all buttons to initial state
+    resetButtonState("taskAws");
+    resetButtonState("task");
+    resetButtonState("demo");
+  
     // Run check on page load
+    updateButtonState("taskAws",'{{urlBackEndAws}}',20000);
     updateButtonState("task",'{{urlBackEnd}}',20000);
     updateButtonState("demo",'{{urlDemo}}',2000);
   });

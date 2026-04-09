@@ -2,7 +2,7 @@ import axios, { isAxiosError } from 'axios';
 
 import type { TaskDto } from 'types/task.dto';
 
-import { config } from '../variables';
+import { getBackend } from './backendUrl';
 
 export interface AxiosClient {
   http: typeof axios;
@@ -31,7 +31,7 @@ export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     dto?: TaskDto
   ): Promise<TaskRestApiResponse<TRes>> => {
-    const url = `${config.backendUrl}${config.basepath}${path}`;
+    const url = `${getBackend()}${path}`;
 
     console.log('Calling:', url);
 

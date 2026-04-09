@@ -6,7 +6,7 @@ jest.mock('axios');
 import { registerRootRoutes } from '../../main/routes';
 
 const expectedGetRoutes: string[] = ['/', '/demo'];
-const expectedPostRoutes: string[] = [];
+const expectedPostRoutes: string[] = ['/select-task-backend'];
 let actualGetRoutes: string[] = [];
 let actualPostRoutes: string[] = [];
 let handlers: Record<string, (req: Request, res: Response) => unknown> = {};
