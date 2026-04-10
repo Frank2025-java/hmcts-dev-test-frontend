@@ -8,7 +8,7 @@
  *
  * It is a demo app, so that should not be a problem.
  * For a real app, you would not give the frontend the option to switch backend at all,
- * because we would freeze the backend URL at build time, and have different builds 
+ * because we would freeze the backend URL at build time, and have different builds
  * for different environments (e.g. local, staging, production).
  * Alternatively, you would use a per-user selection stored in cookies or sessions.
  */
@@ -18,7 +18,7 @@ let selectedBackend: string = '';
 
 const availableBackends = [`${config.backendUrl}${config.basepath}`, `${config.backendAwsUrl}${config.basepath}`];
 
-export function setBackend(url: string) : void {
+export function setBackend(url: string): void {
   validateUrl(url);
   selectedBackend = url;
 }

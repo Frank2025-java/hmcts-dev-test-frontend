@@ -5,7 +5,6 @@ import {
   isoDateTimeRegex,
   localDateTimeOptionalSecondsRegex,
   toDto,
-  utcDateTimeRegex,
 } from '../../main/modules/task/mapper';
 import type { TaskDto } from '../../main/types/task.dto';
 
@@ -283,12 +282,7 @@ describe('DateTime validation', () => {
     expect(isoDateTimeRegex.test(datetimeString)).toBe(false);
   });
 
-  test.each(givenUtcPass)('Datetime %p should pass utc DateTime', datetimeString => {
-    expect(utcDateTimeRegex.test(datetimeString)).toBe(true);
-  });
-
   test.each(givenUtcFail)('Datetime %p should fail utc DateTime', datetimeString => {
-    expect(utcDateTimeRegex.test(datetimeString)).toBe(false);
     expect(isoDateTimeRegex.test(datetimeString)).toBe(false);
   });
 
@@ -302,11 +296,5 @@ describe('DateTime validation', () => {
 
   test.each(givenUtcPass)('IsoDatetime %p should have timezone and thus not pass local datetime', datetimeString => {
     expect(localDateTimeOptionalSecondsRegex.test(datetimeString)).toBe(false);
-  });
-
-  test.each(givenLocalPass)('local datetime %p should convert to isodatetime (UTC)', datetimeString => {
-    const utc = new Date(datetimeString).toISOString();
-    expect(utcDateTimeRegex.test(utc)).toBe(true);
-    expect(isoDateTimeRegex.test(utc)).toBe(true);
   });
 });

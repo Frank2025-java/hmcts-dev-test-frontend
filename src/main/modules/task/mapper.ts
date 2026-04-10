@@ -5,12 +5,7 @@ import type { TaskDto } from 'types/task.dto';
 export const isoDateTimeRegex =
   /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9]|60)(\.\d+)?(Z|[+-](2[0-3]|[01][0-9]):[0-5][0-9])$/;
 
-// recommended level by CoPilot. Allows things like 25 hours. No leap year awareness. No other timezones than Z.
-export const utcDateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
-
-// Made a mistake in Java backend with TaskDto (to be fixed later)
-// having a LocalDateTime instead of a ZonedDateTime
-// Also, the date time entered by the user is the user’s local wall‑clock time
+// The date time entered by the user is the user’s local wall‑clock time
 // <input .... type="datetime-local"
 // and that even might not have seconds in the browser
 export const localDateTimeOptionalSecondsRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
@@ -88,19 +83,14 @@ export function asIsoDateTime(input: unknown): string {
   // Normalise to string
   const value = typeof input === 'string' ? input : String(input);
 
-  // Local date-time → convert to UTC ISO
-  if (localDateTimeOptionalSecondsRegex.test(value)) {
-    return new Date(value).toISOString();
-  }
-
-  // Already UTC ISO (Co-Pilot advised level)  → accept as-is
-  if (utcDateTimeRegex.test(value)) {
-    return value;
-  }
-
   // Already proper ISO → accept as-is
   if (isoDateTimeRegex.test(value)) {
     return value;
+  }
+
+  // Local date-time → convert to UTC ISO
+  if (localDateTimeOptionalSecondsRegex.test(value)) {
+    return new Date(value).toISOString();
   }
 
   // Invalid → throw
