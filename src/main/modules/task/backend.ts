@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 
 import type { TaskDto } from 'types/task.dto';
 
@@ -16,12 +17,14 @@ export interface TaskRestApiResponse<T> {
 // return the {Root, Create,....} as a type, to allow api:TaskRestApiClient declaration
 export interface TaskRestApiClient {
   Root: { call: () => Promise<TaskRestApiResponse<string>> };
-  Create: { call: (dto: TaskDto) => Promise<TaskRestApiResponse<TaskDto>> };
+  Create: { call: (dto: TaskDto, idempotencyKey?: string) => Promise<TaskRestApiResponse<TaskDto>> };
   List: { call: () => Promise<TaskRestApiResponse<TaskDto[]>> };
   View: { call: (id: string) => Promise<TaskRestApiResponse<TaskDto>> };
-  Update: { call: (dto: TaskDto) => Promise<TaskRestApiResponse<TaskDto>> };
-  UpdateStatus: { call: (id: string, status: string) => Promise<TaskRestApiResponse<TaskDto>> };
-  Delete: { call: (id: string) => Promise<TaskRestApiResponse<void>> };
+  Update: { call: (dto: TaskDto, idempotencyKey?: string) => Promise<TaskRestApiResponse<TaskDto>> };
+  UpdateStatus: {
+    call: (id: string, status: string, idempotencyKey?: string) => Promise<TaskRestApiResponse<TaskDto>>;
+  };
+  Delete: { call: (id: string, idempotencyKey?: string) => Promise<TaskRestApiResponse<void>> };
 }
 
 /* eslint-disable no-console */
@@ -29,7 +32,8 @@ export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
   const call = async <TRes = unknown>(
     path: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
-    dto?: TaskDto
+    dto?: TaskDto,
+    idempotencyKey?: string
   ): Promise<TaskRestApiResponse<TRes>> => {
     const url = `${getBackend()}${path}`;
 
@@ -43,17 +47,16 @@ export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
           response = await http.get(url);
           break;
 
-        case 'POST': {
-          response = await http.post(url, dto);
+        case 'POST':
+          response = await http.post(url, dto, header(idempotencyKey));
           break;
-        }
 
         case 'PUT':
-          response = await http.put(url);
+          response = await http.put(url, dto, header(idempotencyKey));
           break;
 
         case 'DELETE':
-          response = await http.delete(url);
+          response = await http.delete(url, header(idempotencyKey));
           break;
 
         default:
@@ -97,7 +100,7 @@ export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
       call: () => call('/', 'GET'),
     },
     Create: {
-      call: (dto: TaskDto) => call('/create', 'POST', dto),
+      call: (dto: TaskDto, idempotencyKey?: string) => call('/create', 'POST', dto, idempotencyKey),
     },
     List: {
       call: () => call('/get-all-tasks', 'GET'),
@@ -106,13 +109,26 @@ export function TaskRestApi({ http }: AxiosClient): TaskRestApiClient {
       call: (id: string) => call(`/get/${id}`, 'GET'),
     },
     Update: {
-      call: (dto: TaskDto) => call('/update', 'POST', dto),
+      call: (dto: TaskDto, idempotencyKey?: string) => call('/update', 'POST', dto, idempotencyKey),
     },
     UpdateStatus: {
-      call: (id: string, status: string) => call(`/update/${id}/status/${status}`, 'PUT'),
+      call: (id: string, status: string, idempotencyKey?: string) =>
+        call(`/update/${id}/status/${status}`, 'PUT', undefined, idempotencyKey),
     },
     Delete: {
-      call: (id: string) => call(`/delete/${id}`, 'DELETE'),
+      call: (id: string, idempotencyKey?: string) => call(`/delete/${id}`, 'DELETE', undefined, idempotencyKey),
+    },
+  };
+}
+
+export function header(idempotencyKey?: string): AxiosRequestConfig {
+  if (!idempotencyKey) {
+    throw new Error('Idempotency key is missing');
+  }
+
+  return {
+    headers: {
+      'Idempotency-Key': idempotencyKey,
     },
   };
 }

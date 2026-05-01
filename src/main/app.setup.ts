@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Application } from 'express';
 
+import { attachIdempotencyKey } from './modules/task/idempotency';
 import { registerRootRoutes } from './routes'; // index.ts
 import { registerTaskRoutes } from './routes/task'; // index.ts
 
@@ -13,6 +14,9 @@ const developmentMode = env === 'development';
 export function setupApp(app: Application, http = axios): void {
   // demo and home
   registerRootRoutes(app, http);
+
+  // idempotency
+  app.use(attachIdempotencyKey);
 
   // tasks
   registerTaskRoutes(app, http);

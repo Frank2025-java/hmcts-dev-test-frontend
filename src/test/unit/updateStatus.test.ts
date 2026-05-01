@@ -3,6 +3,7 @@ let testSubjectPost: RouteHandler;
 
 const expectedNextPageWarn = 'task/list.njk';
 const expectedNextPageSuccess = '/task/list';
+const expectedIdempotencyKey = undefined;
 
 import {
   Request,
@@ -63,9 +64,25 @@ describe('task/updateStatus route', () => {
     await testSubjectPost(givenRequest, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus, expectedIdempotencyKey);
     expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
     expect(spyRender).not.toHaveBeenCalled();
+  });
+
+  it('Passing Idempotency Key on Post', async () => {
+    // given
+    const givenIdempotencyKey = 'test-idempotency-key';
+    const givenRequest = {
+      body: { status: 'Deleted' },
+      params: { id: '1234' },
+      idempotencyKey: givenIdempotencyKey,
+    } as unknown as Request;
+
+    // when
+    await testSubjectPost(givenRequest, spyResponse);
+
+    // then
+    expect(mockBackendCall).toHaveBeenCalledWith(expect.anything(), expect.anything(), givenIdempotencyKey);
   });
 
   it('Stay on List when fail on updateStatus', async () => {
@@ -84,7 +101,7 @@ describe('task/updateStatus route', () => {
     await testSubjectPost(givenRequest, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenId, givenStatus, expectedIdempotencyKey);
     expect(spyRedirect).not.toHaveBeenCalled();
     expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });

@@ -15,7 +15,7 @@ import { getBackend } from '../../main/modules/task/backendUrl';
 const mockedGetBackend = getBackend as jest.MockedFunction<() => string>;
 
 // eslint-disable-next-line import/order
-import { TaskRestApi, TaskRestApiResponse } from '../../main/modules/task/backend';
+import { TaskRestApi, TaskRestApiResponse, header } from '../../main/modules/task/backend';
 import { Status } from '../../main/types/status';
 import { TaskDto, taskDto } from '../../main/types/task.dto';
 
@@ -51,6 +51,8 @@ describe('TaskRestApi backend client', () => {
   const testDue = '2026-02-29T10:00:00Z';
   const testDtoIn = taskDto(undefined, 'Test', null, testDue, Status.Init);
   const testDtoOut = taskDto('123', 'Test', '', testDue, Status.Init);
+  const testIdempotencyKey = 'test-key-123';
+  const expectedHeader = expectIdempotencyHeader(testIdempotencyKey);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,10 +72,10 @@ describe('TaskRestApi backend client', () => {
     const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 201 };
 
     // when
-    const actual = await testSubject.Create.call(testDtoIn);
+    const actual = await testSubject.Create.call(testDtoIn, testIdempotencyKey);
 
     // then
-    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/create`, testDtoIn);
+    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/create`, testDtoIn, expectedHeader);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -136,10 +138,10 @@ describe('TaskRestApi backend client', () => {
     const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 200 };
 
     // when
-    const actual = await testSubject.Update.call(given);
+    const actual = await testSubject.Update.call(given, testIdempotencyKey);
 
     // then
-    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/update`, given);
+    expect(mockPost).toHaveBeenCalledWith(`${givenTaskBaseUri}/update`, given, expectedHeader);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -158,10 +160,10 @@ describe('TaskRestApi backend client', () => {
     const expectedResponse: TaskRestApiResponse<TaskDto> = { data: testDtoOut, status: 200 };
 
     // when
-    const actual = await testSubject.UpdateStatus.call(givenId, givenStatus);
+    const actual = await testSubject.UpdateStatus.call(givenId, givenStatus, testIdempotencyKey);
 
     // then
-    expect(mockPut).toHaveBeenCalledWith(`${givenTaskBaseUri}/update/123/status/Deleted`);
+    expect(mockPut).toHaveBeenCalledWith(`${givenTaskBaseUri}/update/123/status/Deleted`, undefined, expectedHeader);
     expect(actual).toEqual(expectedResponse);
   });
 
@@ -178,10 +180,10 @@ describe('TaskRestApi backend client', () => {
     const expectedResponse: TaskRestApiResponse<void> = { data: undefined, status: 204 };
 
     // when
-    const actual = await testSubject.Delete.call(givenId);
+    const actual = await testSubject.Delete.call(givenId, testIdempotencyKey);
 
     // then
-    expect(mockDelete).toHaveBeenCalledWith(`${givenTaskBaseUri}/delete/123`);
+    expect(mockDelete).toHaveBeenCalledWith(`${givenTaskBaseUri}/delete/123`, expectedHeader);
     expect(actual).toEqual(expectedResponse);
   });
 });
@@ -190,6 +192,7 @@ describe('Wrapping of errors', () => {
   const testId = '123';
   const testStatus = Status.Deleted;
   const testDtoIn = {} as TaskDto;
+  const testIdempotencyKey = 'test-key-123';
 
   const mockBackendErrorStatus = 400;
   const mockBackendErrorMsg = 'backend return message';
@@ -239,7 +242,7 @@ describe('Wrapping of errors', () => {
     mockPost.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.Create.call(testDtoIn);
+    const actual = await testSubject.Create.call(testDtoIn, testIdempotencyKey);
 
     // then
     expect(actual).toEqual(expected);
@@ -272,7 +275,7 @@ describe('Wrapping of errors', () => {
     mockPost.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.Update.call(testDtoIn);
+    const actual = await testSubject.Update.call(testDtoIn, testIdempotencyKey);
 
     // then
     expect(actual).toEqual(expected);
@@ -283,7 +286,7 @@ describe('Wrapping of errors', () => {
     mockPut.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.UpdateStatus.call(testId, testStatus);
+    const actual = await testSubject.UpdateStatus.call(testId, testStatus, testIdempotencyKey);
 
     // then
     expect(actual).toEqual(expected);
@@ -294,9 +297,89 @@ describe('Wrapping of errors', () => {
     mockDelete.mockRejectedValue(given);
 
     // when
-    const actual = await testSubject.Delete.call(testId);
+    const actual = await testSubject.Delete.call(testId, testIdempotencyKey);
 
     // then
     expect(actual).toEqual(expected);
   });
 });
+
+describe('header()', () => {
+  it('returns the correct Axios header object when idempotencyKey is provided', () => {
+    const key = 'test-key-123';
+
+    const result = header(key);
+
+    expect(result).toEqual({
+      headers: {
+        'Idempotency-Key': key,
+      },
+    });
+  });
+
+  it('throws an error when idempotencyKey is undefined', () => {
+    expect(() => header(undefined)).toThrow('Idempotency key is missing');
+  });
+
+  it('throws an error when idempotencyKey is an empty string', () => {
+    expect(() => header('')).toThrow('Idempotency key is missing');
+  });
+});
+
+describe('Should fail without idempotency key', () => {
+  const testDtoIn = taskDto(undefined, 'Test', null, '2026-02-29T10:00:00Z', Status.Init);
+
+  const expectedReturnErrorResponse = { data: 'Error: Idempotency key is missing', status: 0 };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('Should fail on create without idempotency key', async () => {
+    // given
+
+    // when
+    const actual = await testSubject.Create.call(testDtoIn);
+
+    // then
+    expect(actual).toEqual(expectedReturnErrorResponse);
+  });
+
+  it('Should fail on update without idempotency key', async () => {
+    // given
+
+    // when
+    const actual = await testSubject.Update.call(testDtoIn);
+
+    // then
+    expect(actual).toEqual(expectedReturnErrorResponse);
+  });
+
+  it('Should fail on update status without idempotency key', async () => {
+    // given
+
+    // when
+    const actual = await testSubject.UpdateStatus.call('123', Status.Deleted);
+
+    // then
+    expect(actual).toEqual(expectedReturnErrorResponse);
+  });
+
+  it('Should fail on delete without idempotency key', async () => {
+    // given
+
+    // when
+    const actual = await testSubject.Delete.call('123');
+
+    // then
+    expect(actual).toEqual(expectedReturnErrorResponse);
+  });
+});
+
+function expectIdempotencyHeader(key: string) {
+  return expect.objectContaining({
+    headers: expect.objectContaining({
+      'Idempotency-Key': key,
+    }),
+  });
+}

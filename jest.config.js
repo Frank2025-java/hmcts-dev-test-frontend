@@ -1,7 +1,7 @@
 module.exports = {
   //testRegex: '(/src/test/unit/.*|\\.(test|spec))\\.(ts|js)$',
   testMatch: ['<rootDir>/src/test/unit/**/*.test.ts'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleFileExtensions: ['ts', 'js', 'json', 'd.ts'],
   testEnvironment: 'node',
   transform: { '^.+\\.ts$': ['ts-jest'] },
   moduleNameMapper: {

@@ -21,8 +21,13 @@ jest.mock('../../main/development', () => ({
   setupDev: jest.fn(),
 }));
 
+// Avoid jest loading ESM uuid modules, because this is a CommonJS build
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'test-uuid-123'),
+}));
+
 describe('App route setup', () => {
-  const mockApp = {} as unknown as Application;
+  const mockApp = { use: jest.fn() } as unknown as Application;
 
   it('Should register root routes', () => {
     setupApp(mockApp, mockAxios);
