@@ -1,4 +1,4 @@
-import { Application } from 'express';
+import { Application, Request, Response } from 'express';
 
 import type { TaskDto } from 'types/task.dto';
 
@@ -10,7 +10,7 @@ import { renderRouteError, warning } from './error';
 export const routePath = '/task/create';
 
 export default function (app: Application, api: TaskRestApiClient): void {
-  app.get(routePath, async (req, res) => {
+  app.get(routePath, async (_req: Request, res: Response) => {
     try {
       res.render('task/create.njk');
     } catch (error: unknown) {
@@ -18,11 +18,11 @@ export default function (app: Application, api: TaskRestApiClient): void {
     }
   });
 
-  app.post(routePath, async (req, res) => {
+  app.post(routePath, async (req: Request, res: Response) => {
     try {
       const task: TaskDto = toDto(req.body);
 
-      const response = await api.Create.call(task);
+      const response = await api.Create.call(task, req.idempotencyKey);
 
       if (response.status === 201) {
         // go to the task list page after creating a task

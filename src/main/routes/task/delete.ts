@@ -1,4 +1,4 @@
-import { Application } from 'express';
+import { Application, Request, Response } from 'express';
 
 import { TaskRestApiClient } from 'modules/task/backend';
 
@@ -7,11 +7,11 @@ import { warning } from './error';
 export const routePath = '/task/delete/:id';
 
 export default function (app: Application, api: TaskRestApiClient): void {
-  app.post(routePath, async (req, res) => {
+  app.post(routePath, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
-      const response = await api.Delete.call(id);
+      const response = await api.Delete.call(id, req.idempotencyKey);
 
       if (response.status === 204) {
         // refresh the task list page after deleting a task

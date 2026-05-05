@@ -48,6 +48,22 @@ The steps below are the first ones that I took, and are stored in this forked gi
 
 # Design
 
+Architecture diagram
+
+```mermaid
+flowchart LR
+    A[User<br/>Web Browser]
+        -->|HTTP GET/POST| B[Node.js / Express Server<br/>Port 3000<br/>Nunjucks Templates]
+
+    B -->|REST API Calls<br/>JSON| C[Backend Service<br/>Spring Boot / REST API<br/>Port 4000 or api.frankz.co.uk]
+
+    style A fill:#f0f8ff,stroke:#4a90e2,stroke-width:2px
+    style B fill:#e8ffe8,stroke:#2ecc71,stroke-width:2px
+    style C fill:#fff0f0,stroke:#e74c3c,stroke-width:2px
+```
+
+Schematic flow diagram
+
 ```
 ┌───────────────────┐
 │ APP START         │

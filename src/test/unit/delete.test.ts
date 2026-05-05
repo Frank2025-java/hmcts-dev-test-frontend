@@ -3,6 +3,7 @@ let testSubjectPost: RouteHandler;
 
 const expectedNextPageWarn = 'task/list.njk';
 const expectedNextPageSuccess = '/task/list';
+const expectedIdempotencyKey = undefined;
 
 import {
   Request,
@@ -61,9 +62,21 @@ describe('task/delete route', () => {
     await testSubjectPost(givenReq, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenId);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenId, expectedIdempotencyKey);
     expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
     expect(spyRender).not.toHaveBeenCalled();
+  });
+
+  it('Passing Idempotency Key on Post', async () => {
+    // given
+    const givenIdempotencyKey = 'test-key-123';
+    const givenReq = { body: {}, params: { id: '1234' }, idempotencyKey: givenIdempotencyKey } as unknown as Request;
+
+    // when
+    await testSubjectPost(givenReq, spyResponse);
+
+    // then
+    expect(mockBackendCall).toHaveBeenCalledWith(expect.anything(), givenIdempotencyKey);
   });
 
   it('Stay on List when fail on delete', async () => {
@@ -82,7 +95,7 @@ describe('task/delete route', () => {
     await testSubjectPost(givenReq, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenId);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenId, expectedIdempotencyKey);
     expect(spyRedirect).not.toHaveBeenCalled();
     expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });

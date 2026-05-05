@@ -4,6 +4,7 @@ let testSubjectPost: RouteHandler;
 const expectedGetPage = 'task/view.njk';
 const expectedNextPageWarn = expectedGetPage;
 const expectedNextPageSuccess = '/task/list';
+const expectedIdempotencyKey = undefined;
 
 import {
   Request,
@@ -60,7 +61,7 @@ describe('task/update route', () => {
     expect(testSubjectGet).toBeUndefined();
   });
 
-  it('Redirect on Post to List when successful Create', async () => {
+  it('Redirect on Post to List when successful Update', async () => {
     // given
     const givenReq = {
       body: {
@@ -84,9 +85,22 @@ describe('task/update route', () => {
     await testSubjectPost(givenReq, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenDto);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenDto, expectedIdempotencyKey);
     expect(spyRedirect).toHaveBeenCalledWith(expectedNextPageSuccess);
     expect(spyRender).not.toHaveBeenCalled();
+  });
+
+  it('Passing Idempotency Key on Post', async () => {
+    // given
+    const givenIdempotencyKey = 'test-idempotency-key';
+    const givenReq = { body: testDto, idempotencyKey: givenIdempotencyKey } as unknown as Request;
+    toDtoMock.mockReturnValue(testDto);
+
+    // when
+    await testSubjectPost(givenReq, spyResponse);
+
+    // then
+    expect(mockBackendCall).toHaveBeenCalledWith(expect.anything(), givenIdempotencyKey);
   });
 
   it('Stay on page when fail on backend', async () => {
@@ -105,7 +119,7 @@ describe('task/update route', () => {
     await testSubjectPost(givenReq, spyResponse);
 
     // then
-    expect(mockBackendCall).toHaveBeenCalledWith(givenDto);
+    expect(mockBackendCall).toHaveBeenCalledWith(givenDto, expectedIdempotencyKey);
     expect(spyRedirect).not.toHaveBeenCalled();
     expectRenderWithWarning(spyRender, expectedNextPageWarn, 'test errror message');
   });

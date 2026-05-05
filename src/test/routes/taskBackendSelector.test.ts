@@ -66,9 +66,9 @@ describe('Route Task Backend Selector Module', () => {
     // given
     const givenUrl = 'http://example.com';
     const givenRequest = { body: { backend: givenUrl } } as unknown as Request;
-    const givenError = new Error('Test Fail');
+    const givenError = 'Test Fail';
     mockedSetBackend.mockImplementation(() => {
-      throw givenError;
+      throw new Error(givenError);
     });
 
     // when

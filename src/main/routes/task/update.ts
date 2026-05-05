@@ -1,4 +1,4 @@
-import { Application } from 'express';
+import { Application, Request, Response } from 'express';
 
 import type { TaskDto } from 'types/task.dto';
 
@@ -10,11 +10,11 @@ import { warning } from './error';
 export const routePath = '/task/update';
 
 export default function (app: Application, api: TaskRestApiClient): void {
-  app.post(routePath, async (req, res) => {
+  app.post(routePath, async (req: Request, res: Response) => {
     try {
       const task: TaskDto = toDto(req.body);
 
-      const response = await api.Update.call(task);
+      const response = await api.Update.call(task, req.idempotencyKey);
 
       if (response.status === 200) {
         // go to the task list page after updating a task
